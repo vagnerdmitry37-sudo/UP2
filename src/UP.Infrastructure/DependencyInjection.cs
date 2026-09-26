@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
+using UP.Infrastructure.Identity;
 using UP.Infrastructure.Persistence;
 
 namespace UP.Infrastructure;
@@ -35,6 +37,23 @@ public static class DependencyInjection
 
             options.EnableSensitiveDataLogging(database.EnableSensitiveDataLogging);
         });
+
+        services.AddIdentityCore<ApplicationUser>(options =>
+            {
+                options.Password.RequiredLength = 12;
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+
+                options.User.RequireUniqueEmail = true;
+
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            })
+            .AddRoles<IdentityRole<Guid>>()
+            .AddEntityFrameworkStores<AppDbContext>();
 
         return services;
     }
