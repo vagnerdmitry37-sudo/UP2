@@ -1,8 +1,14 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Tokens;
 
+using UP.Application.Common.Abstractions;
+using UP.Infrastructure.Authentication;
 using UP.Infrastructure.Identity;
 using UP.Infrastructure.Persistence;
 
@@ -55,6 +61,57 @@ public static class DependencyInjection
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<AppDbContext>();
 
+        services.AddJwtAuthentication();
+
         return services;
+    }
+
+    private static void AddJwtAuthentication(this IServiceCollection services)
+    {
+        services.AddOptions<JwtOptions>()
+            .BindConfiguration(JwtOptions.SectionName)
+            .Validate(options =>
+                options.Key.Length >= 32,
+                "JWT key must be at least 32 characters long.")
+            .Validate(options =>
+                !string.IsNullOrWhiteSpace(options.Issuer),
+                "JWT issuer must be configured.")
+            .Validate(options =>
+                !string.IsNullOrWhiteSpace(options.Audience),
+                "JWT audience must be configured.")
+            .Validate(options =>
+                options.AccessTokenLifetimeMinutes is >= 1 and <= 60,
+                "JWT access token lifetime must be between 1 and 60 minutes.")
+            .ValidateOnStart();
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<IAccessTokenGenerator, JwtAccessTokenGenerator>();
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer();
+
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtOptions>>((bearer, jwtOptions) =>
+            {
+                JwtOptions jwt = jwtOptions.Value;
+
+                bearer.MapInboundClaims = false;
+                bearer.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwt.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwt.Audience,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = jwt.CreateSigningKey(),
+                    ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                    ClockSkew = TimeSpan.FromSeconds(30),
+                    NameClaimType = JwtRegisteredClaimNames.Sub,
+                    RoleClaimType = JwtClaimTypes.Role,
+                };
+            });
+
+        services.AddAuthorization();
     }
 }
