@@ -392,3 +392,7 @@ dotnet_naming_style.s_camelcase.capitalization = camel_case
 [*.cs]
 dotnet_diagnostic.CA1716.severity = none   # Identifiers should not match keywords (e.g. Error)
 dotnet_diagnostic.CA1000.severity = none   # Static members on generic types (Result<T>.Success)
+
+# EF Core migrations are generated code: keep analyzers from failing the build (TreatWarningsAsErrors)
+[**/Migrations/*.cs]
+generated_code = true
