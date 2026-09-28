@@ -1,4 +1,4 @@
-namespace UP.Infrastructure.Authentication;
+namespace UP.Infrastructure.Auth;
 
 internal static class JwtClaimTypes
 {

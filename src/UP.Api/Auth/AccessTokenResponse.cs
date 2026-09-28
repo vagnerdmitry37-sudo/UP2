@@ -1,3 +1,3 @@
-namespace UP.Api.Authentication;
+namespace UP.Api.Auth;
 
 public sealed record AccessTokenResponse(string AccessToken, DateTimeOffset ExpiresAt);

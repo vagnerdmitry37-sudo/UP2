@@ -1,6 +1,6 @@
-using UP.Application.Common.Abstractions;
+using UP.Application.Auth;
 
-namespace UP.Api.Authentication;
+namespace UP.Api.Auth;
 
 internal static class RefreshTokenCookie
 {

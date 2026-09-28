@@ -4,9 +4,10 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-using UP.Application.Common.Abstractions;
+using UP.Application.Auth;
+using UP.Infrastructure.Auth;
 
-namespace UP.Infrastructure.Authentication;
+namespace UP.Infrastructure.Auth;
 
 internal sealed class JwtAccessTokenGenerator(IOptions<JwtOptions> options, TimeProvider timeProvider)
     : IAccessTokenGenerator

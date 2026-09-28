@@ -7,8 +7,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-using UP.Application.Common.Abstractions;
-using UP.Infrastructure.Authentication;
+using UP.Application.Auth;
+using UP.Infrastructure.Auth;
 using UP.Infrastructure.Identity;
 using UP.Infrastructure.Persistence;
 
@@ -84,8 +84,16 @@ public static class DependencyInjection
                 "JWT access token lifetime must be between 1 and 60 minutes.")
             .ValidateOnStart();
 
+        services.AddOptions<RefreshTokenOptions>()
+            .BindConfiguration(RefreshTokenOptions.SectionName)
+            .Validate(options =>
+                options.LifetimeDays is >= 1 and <= 30,
+                "Refresh token lifetime must be between 1 and 30 days.")
+            .ValidateOnStart();
+
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IAccessTokenGenerator, JwtAccessTokenGenerator>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer();

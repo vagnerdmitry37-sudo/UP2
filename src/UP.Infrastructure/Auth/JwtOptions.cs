@@ -2,7 +2,7 @@ using System.Text;
 
 using Microsoft.IdentityModel.Tokens;
 
-namespace UP.Infrastructure.Authentication;
+namespace UP.Infrastructure.Auth;
 
 public sealed class JwtOptions
 {
