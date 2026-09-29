@@ -15,7 +15,7 @@ public sealed class AuthController(IRefreshTokenService refreshTokenService) : C
     public async Task<ActionResult<AccessTokenResponse>> Refresh(CancellationToken cancellationToken)
     {
         string? refreshToken = RefreshTokenCookie.Read(Request);
-        if (refreshToken is null)
+        if (string.IsNullOrWhiteSpace(refreshToken))
         {
             return Unauthorized();
         }

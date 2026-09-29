@@ -17,4 +17,8 @@ public sealed class RefreshToken
     public DateTimeOffset? RevokedAt { get; private set; }
 
     public Guid? ReplacedByTokenId { get; private set; }
+
+    public bool IsRevoked => RevokedAt is not null;
+
+    public bool IsExpired(DateTimeOffset now) => ExpiresAt <= now;
 }
