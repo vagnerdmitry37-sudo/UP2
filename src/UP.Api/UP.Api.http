@@ -1,0 +1,24 @@
+# Auth flow. Run with the "https" launch profile: the refresh cookie is Secure (__Secure- prefix),
+# so it is only sent back over HTTPS.
+
+@host = https://localhost:7215
+@email = alice@example.com
+@password = correct-horse-battery
+
+### Register → 202 both for a new account and for an email that is already taken
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Register with a weak password → 400 with the password rules
+POST {{host}}/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "short"
+}

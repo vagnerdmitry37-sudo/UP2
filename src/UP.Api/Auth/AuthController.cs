@@ -8,8 +8,29 @@ namespace UP.Api.Auth;
 [ApiController]
 [Route(AuthRoutes.Base)]
 [AllowAnonymous]
-public sealed class AuthController(IRefreshTokenService refreshTokenService) : ControllerBase
+public sealed class AuthController(IAuthService authService, IRefreshTokenService refreshTokenService)
+    : ControllerBase
 {
+    [HttpPost(AuthRoutes.Register)]
+    [ProducesResponseType(StatusCodes.Status202Accepted)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Register(RegisterRequest request)
+    {
+        RegistrationResult result = await authService.RegisterAsync(request.Email, request.Password);
+
+        if (result.Succeeded)
+        {
+            return Accepted();
+        }
+
+        foreach (string error in result.Errors)
+        {
+            ModelState.AddModelError(string.Empty, error);
+        }
+
+        return ValidationProblem(ModelState);
+    }
+
     [HttpPost(AuthRoutes.Refresh)]
     [ProducesResponseType<AccessTokenResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

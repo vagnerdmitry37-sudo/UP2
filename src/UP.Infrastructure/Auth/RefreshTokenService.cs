@@ -14,7 +14,7 @@ using UP.Infrastructure.Persistence;
 
 namespace UP.Infrastructure.Auth;
 
-internal sealed partial class RefreshTokenService(
+internal sealed class RefreshTokenService(
     AppDbContext dbContext,
     UserManager<ApplicationUser> userManager,
     IAccessTokenGenerator accessTokenGenerator,
@@ -42,7 +42,7 @@ internal sealed partial class RefreshTokenService(
 
         if (current.IsRevoked)
         {
-            LogTokenReuse(logger, current.UserId, current.FamilyId);
+            logger.LogTokenReuse(current.UserId, current.FamilyId);
             await RevokeFamilyAsync(current.FamilyId, now, cancellationToken);
             return null;
         }
@@ -66,7 +66,7 @@ internal sealed partial class RefreshTokenService(
 
         if (!rotated)
         {
-            LogRotationRace(logger, current.UserId, current.Id);
+            logger.LogRotationRace(current.UserId, current.Id);
             return null;
         }
 
@@ -129,12 +129,4 @@ internal sealed partial class RefreshTokenService(
 
     private static string Hash(string rawToken) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
-
-    [LoggerMessage(Level = LogLevel.Warning,
-        Message = "Refresh token reuse detected for user {UserId}; revoked token family {FamilyId}")]
-    private static partial void LogTokenReuse(ILogger logger, Guid userId, Guid familyId);
-
-    [LoggerMessage(Level = LogLevel.Information,
-        Message = "Concurrent refresh lost the race for user {UserId}, token {TokenId}")]
-    private static partial void LogRotationRace(ILogger logger, Guid userId, Guid tokenId);
 }

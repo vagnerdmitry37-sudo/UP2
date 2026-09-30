@@ -86,4 +86,5 @@ All settings live under the `Options:` section (`Options:Database`, `Options:Jwt
 ### Conventions
 
 - Inject `TimeProvider` for current time rather than using `DateTimeOffset.UtcNow`; entity IDs use `Guid.CreateVersion7`.
-- Logging uses source-generated `[LoggerMessage]` methods (see `RefreshTokenService`), not `logger.LogX(...)` calls.
+- Logging uses source-generated `[LoggerMessage]` methods, not `logger.LogX(...)` calls. Each feature keeps them in one `<Feature>Log` class as `ILogger` extension methods with unique event IDs (see `Infrastructure/Auth/AuthLog.cs`: Auth owns 1000–1099).
+- Code describes itself through names. Do not add `/// <summary>` blocks that restate what a type holds, or section-divider comments (`// Registration: 1000–1019`). Comment only a non-obvious *why*, such as a security or concurrency constraint.

@@ -5,7 +5,6 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 using UP.Application.Auth;
-using UP.Infrastructure.Auth;
 
 namespace UP.Infrastructure.Auth;
 

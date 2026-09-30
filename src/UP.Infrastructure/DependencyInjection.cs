@@ -94,6 +94,7 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IAccessTokenGenerator, JwtAccessTokenGenerator>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer();
