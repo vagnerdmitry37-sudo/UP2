@@ -37,12 +37,39 @@ Package versions are managed centrally in `Directory.Packages.props`: add `<Pack
 
 ## Architecture
 
-Clean Architecture, four projects under `src/`. Code is grouped by feature folder (e.g. `Auth/`) inside each project:
+Clean Architecture: four projects under `src/`. Dependencies point inward only, enforced by project references:
 
-- **UP.Domain** → no dependencies.
-- **UP.Application** → interfaces + DTOs only (e.g. IRefreshTokenService). No EF Core.
-- **UP.Infrastructure** → implementations are `internal sealed`, registered in DependencyInjection.cs.
-- **UP.Api** → thin controllers; routes live in AuthRoutes constants.
+```
+UP.Api  →  UP.Infrastructure  →  UP.Application  →  UP.Domain
+```
+
+A project may use only the projects to its right. Why: the outer layers (web, database, libraries) change more often than the inner ones, so inner code must never depend on them.
+
+### Layers
+
+| Project | Responsibility | May contain | Must not contain |
+|---|---|---|---|
+| **UP.Domain** | Business concepts and rules that hold regardless of storage or transport | Entities, value objects, pure logic | Any package or project reference |
+| **UP.Application** | What the app can do, as contracts | Service interfaces and the result types they return | EF Core, Identity, JWT, anything from ASP.NET Core HTTP |
+| **UP.Infrastructure** | How it is done, with concrete libraries | Implementations of Application interfaces, EF entities and configurations, options classes | HTTP types (cookies, action results, `HttpContext`) |
+| **UP.Api** | Translating HTTP to service calls and back | Controllers, route constants, request/response records, cookie and claims helpers | Business logic, direct database access |
+
+Quick placement test: uses HTTP → Api. Uses EF, Identity or JWT → Infrastructure. A contract or result that both sides share → Application. A rule that needs none of these → Domain.
+
+### Folder rules
+
+- **Group by feature, not by type.** Inside each project, code lives in a feature folder (`Auth/`, and later `Orders/` and so on). One feature therefore has a folder in several projects, each holding only that layer's part. Why: a change to a feature touches one known folder per layer.
+- **Keep feature folders flat.** No type subfolders such as `Services/`, `Requests/` or `Responses/`. Why: file names already state the type, and small type folders spread one change across many places. Split a large feature by sub-feature (use case) only when it becomes hard to scan.
+- **Create only the layer folders a feature needs.** A feature with no HTTP surface has no Api folder.
+- **Shared code sits outside feature folders.** Code used by many features gets its own top-level folder named after what it is. It never goes inside the first feature that needed it. Examples: `Infrastructure/Persistence/` (the single `AppDbContext`, migrations) and `Infrastructure/Identity/` (the user entity and user manager).
+
+### Boundary rules
+
+- **Wire formats stay in Api.** Request/response records describe JSON shape and validation attributes. Application returns its own result types, and the controller maps them to status codes. Why: the HTTP contract and the service contract can change independently.
+- **Infrastructure is hidden.** Its classes are `internal sealed` and reachable only through Application interfaces. The only public entry point is `AddInfrastructure()` in `DependencyInjection.cs`, where every implementation and options class is registered.
+- **Controllers are thin.** Read input, call a service, translate the result to HTTP. Route strings live in a per-feature `*Routes` constants class, not inline.
+
+Typical request flow: controller → Application interface → Infrastructure implementation (database, Identity, token generation) → Application result type → controller maps it to an HTTP response.
 
 ### Configuration pattern
 
