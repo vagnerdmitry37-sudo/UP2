@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+
 using UP.Application.Auth;
 
 namespace UP.Api.Auth;
