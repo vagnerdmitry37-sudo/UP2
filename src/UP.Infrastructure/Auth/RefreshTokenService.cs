@@ -19,11 +19,7 @@ internal sealed class RefreshTokenService(
 {
     public async Task<AuthTokens?> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
     {
-        string tokenHash = RefreshTokenFactory.Hash(refreshToken);
-        RefreshToken? current = await dbContext.RefreshTokens
-            .AsNoTracking()
-            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
-
+        RefreshToken? current = await FindByValueAsync(refreshToken, cancellationToken);
         if (current is null)
         {
             return null;
@@ -34,7 +30,7 @@ internal sealed class RefreshTokenService(
         if (current.IsRevoked)
         {
             logger.LogTokenReuse(current.UserId, current.FamilyId);
-            await RevokeFamilyAsync(current.FamilyId, now, cancellationToken);
+            await RevokeFamilyAsync(current.UserId, current.FamilyId, now, cancellationToken);
             return null;
         }
 
@@ -44,9 +40,9 @@ internal sealed class RefreshTokenService(
         }
 
         ApplicationUser? user = await userManager.FindByIdAsync(current.UserId.ToString());
-        if (user is null || await userManager.IsLockedOutAsync(user))
+        if (user is null)
         {
-            await RevokeFamilyAsync(current.FamilyId, now, cancellationToken);
+            await RevokeFamilyAsync(current.UserId, current.FamilyId, now, cancellationToken);
             return null;
         }
 
@@ -69,11 +65,7 @@ internal sealed class RefreshTokenService(
 
     public async Task RevokeFamilyAsync(string refreshToken, CancellationToken cancellationToken)
     {
-        string tokenHash = RefreshTokenFactory.Hash(refreshToken);
-        RefreshToken? current = await dbContext.RefreshTokens
-            .AsNoTracking()
-            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
-
+        RefreshToken? current = await FindByValueAsync(refreshToken, cancellationToken);
         if (current is null)
         {
             return;
@@ -84,8 +76,38 @@ internal sealed class RefreshTokenService(
             logger.LogTokenReuse(current.UserId, current.FamilyId);
         }
 
-        await RevokeFamilyAsync(current.FamilyId, timeProvider.GetUtcNow(), cancellationToken);
+        await RevokeFamilyAsync(current.UserId, current.FamilyId, timeProvider.GetUtcNow(), cancellationToken);
         logger.LogUserLoggedOut(current.UserId, current.FamilyId);
+    }
+
+    public async Task<bool> RevokeAllAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        RefreshToken? current = await FindByValueAsync(refreshToken, cancellationToken);
+        DateTimeOffset now = timeProvider.GetUtcNow();
+
+        if (current is null || current.IsExpired(now))
+        {
+            return false;
+        }
+
+        if (current.IsRevoked)
+        {
+            logger.LogTokenReuse(current.UserId, current.FamilyId);
+            await RevokeFamilyAsync(current.UserId, current.FamilyId, now, cancellationToken);
+            return false;
+        }
+
+        int revoked = await RevokeUserTokensAsync(current.UserId, now, cancellationToken);
+        logger.LogUserLoggedOutEverywhere(current.UserId, revoked);
+        return true;
+    }
+
+    private Task<RefreshToken?> FindByValueAsync(string refreshToken, CancellationToken cancellationToken)
+    {
+        string tokenHash = RefreshTokenFactory.Hash(refreshToken);
+        return dbContext.RefreshTokens
+            .AsNoTracking()
+            .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
     }
 
     private async Task<bool> RotateRefreshToken(
@@ -96,7 +118,7 @@ internal sealed class RefreshTokenService(
     {
         dbContext.ChangeTracker.Clear();
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-        await LockFamilyAsync(replacement.FamilyId, cancellationToken);
+        await LockUserAsync(replacement.UserId, cancellationToken);
 
         int affected = await dbContext.RefreshTokens
             .Where(token => token.Id == currentRefreshTokenId && token.RevokedAt == null)
@@ -116,26 +138,43 @@ internal sealed class RefreshTokenService(
         return true;
     }
 
-    private Task RevokeFamilyAsync(Guid familyId, DateTimeOffset now, CancellationToken cancellationToken)
+    private Task<int> RevokeFamilyAsync(Guid userId, Guid familyId, DateTimeOffset now, CancellationToken cancellationToken) =>
+        RevokeLockedAsync(
+            userId,
+            dbContext.RefreshTokens.Where(token => token.FamilyId == familyId && token.RevokedAt == null),
+            now,
+            cancellationToken);
+
+    private Task<int> RevokeUserTokensAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken) =>
+        RevokeLockedAsync(
+            userId,
+            dbContext.RefreshTokens.Where(token => token.UserId == userId && token.RevokedAt == null),
+            now,
+            cancellationToken);
+
+    private Task<int> RevokeLockedAsync(
+        Guid userId,
+        IQueryable<RefreshToken> tokens,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
     {
         IExecutionStrategy strategy = dbContext.Database.CreateExecutionStrategy();
         return strategy.ExecuteAsync(async () =>
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
-            await LockFamilyAsync(familyId, cancellationToken);
+            await LockUserAsync(userId, cancellationToken);
 
-            await dbContext.RefreshTokens
-                .Where(token => token.FamilyId == familyId && token.RevokedAt == null)
-                .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, now), cancellationToken);
+            int revoked = await tokens.ExecuteUpdateAsync(
+                setters => setters.SetProperty(token => token.RevokedAt, now),
+                cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
+            return revoked;
         });
     }
 
-    // Serializes rotation and revocation per family. Without it, a revocation running under READ COMMITTED
-    // cannot see the replacement row inserted by a concurrent rotation, leaving that token live after logout.
-    private Task<int> LockFamilyAsync(Guid familyId, CancellationToken cancellationToken) =>
+    private Task<int> LockUserAsync(Guid userId, CancellationToken cancellationToken) =>
         dbContext.Database.ExecuteSqlAsync(
-            $"SELECT pg_advisory_xact_lock(hashtextextended({familyId.ToString()}, 0))",
+            $"SELECT pg_advisory_xact_lock(hashtextextended({userId.ToString()}, 0))",
             cancellationToken);
 }

@@ -72,7 +72,7 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
 
     [HttpPost(AuthRoutes.Logout)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+    public async Task<IActionResult> Logout()
     {
         string? refreshToken = RefreshTokenCookie.Read(Request);
         if (string.IsNullOrWhiteSpace(refreshToken))
@@ -80,7 +80,28 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
             return NoContent();
         }
 
-        await refreshTokenService.RevokeFamilyAsync(refreshToken, cancellationToken);
+        await refreshTokenService.RevokeFamilyAsync(refreshToken, CancellationToken.None);
+        RefreshTokenCookie.Delete(Response);
+
+        return NoContent();
+    }
+
+    [HttpPost(AuthRoutes.LogoutAll)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> LogoutAll()
+    {
+        string? refreshToken = RefreshTokenCookie.Read(Request);
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return Unauthorized();
+        }
+
+        if (!await refreshTokenService.RevokeAllAsync(refreshToken, CancellationToken.None))
+        {
+            return Unauthorized();
+        }
+
         RefreshTokenCookie.Delete(Response);
 
         return NoContent();

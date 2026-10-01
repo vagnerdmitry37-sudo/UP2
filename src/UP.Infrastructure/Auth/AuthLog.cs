@@ -38,4 +38,8 @@ internal static partial class AuthLog
     [LoggerMessage(EventId = 1060, Level = LogLevel.Information,
         Message = "User {UserId} logged out; revoked token family {FamilyId}")]
     public static partial void LogUserLoggedOut(this ILogger logger, Guid userId, Guid familyId);
+
+    [LoggerMessage(EventId = 1061, Level = LogLevel.Information,
+        Message = "User {UserId} logged out everywhere; revoked {RevokedCount} refresh tokens")]
+    public static partial void LogUserLoggedOutEverywhere(this ILogger logger, Guid userId, int revokedCount);
 }

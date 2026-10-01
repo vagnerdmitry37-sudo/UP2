@@ -78,12 +78,13 @@ All settings live under the `Options:` section (`Options:Database`, `Options:Jwt
 ### Auth design (built in phases, see commit history)
 
 - Access tokens: short-lived HS256 JWTs. `MapInboundClaims = false`; name claim is `sub`, role claim is `JwtClaimTypes.Role`.
-- Refresh tokens: random 64-byte values; only the SHA-256 hash is stored (`RefreshTokens` table). Tokens belong to a **family** (`FamilyId`). Every refresh rotates the token. Reusing a revoked token revokes the whole family (theft detection). A missing or locked-out user also revokes the family.
+- Refresh tokens: random 64-byte values; only the SHA-256 hash is stored (`RefreshTokens` table). Tokens belong to a **family** (`FamilyId`). Every refresh rotates the token. Reusing a revoked token revokes the whole family (theft detection). A missing user also revokes the family. Lockout only blocks new logins and never ends existing sessions, so failed passwords can't be used to force someone out.
 - Rotation uses a conditional `ExecuteUpdate` (`RevokedAt == null`) inside a transaction run through `CreateExecutionStrategy()`. This is required because `EnableRetryOnFailure` is on. It guarantees only one concurrent refresh wins.
-- Rotation and every family revocation take a per-family Postgres advisory lock (`pg_advisory_xact_lock`) inside their transaction. Without it, a revocation cannot see the replacement row of a concurrent rotation, and that token would survive logout.
+- Rotation and every revocation (family or user-wide) take a per-user Postgres advisory lock (`pg_advisory_xact_lock`) inside their transaction. Without it, a revocation cannot see the replacement row of a concurrent rotation, and that token would survive logout.
 - The refresh token travels only in an HttpOnly, `SameSite=Strict` `__Secure-refresh_token` cookie (`RefreshTokenCookie`). On a failed refresh the controller deliberately does not clear the cookie.
 - Logout is anonymous (it must work with an expired access token), revokes the cookie's family and always returns 204. It deletes the cookie only when the request carried one, so a cross-site POST cannot log the user out. The access token stays valid until it expires.
-- Current phase (4): register, login, refresh and logout are implemented.
+- Logout-all is also cookie-based but requires a live (not revoked, not expired) token, so an old leaked token can't sign the user out everywhere. It revokes all of the user's refresh tokens and answers 401 otherwise.
+- Current phase (4): register, login, refresh, logout and logout-all are implemented.
 
 ### Conventions
 

@@ -8,4 +8,5 @@ internal static class AuthRoutes
     public const string Login = "login";
     public const string Refresh = "refresh";
     public const string Logout = "logout";
+    public const string LogoutAll = "logout-all";
 }
