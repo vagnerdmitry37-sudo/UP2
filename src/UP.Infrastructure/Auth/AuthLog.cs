@@ -34,4 +34,8 @@ internal static partial class AuthLog
     [LoggerMessage(EventId = 1041, Level = LogLevel.Information,
         Message = "Concurrent refresh lost the race for user {UserId}, token {TokenId}")]
     public static partial void LogRotationRace(this ILogger logger, Guid userId, Guid tokenId);
+
+    [LoggerMessage(EventId = 1060, Level = LogLevel.Information,
+        Message = "User {UserId} logged out; revoked token family {FamilyId}")]
+    public static partial void LogUserLoggedOut(this ILogger logger, Guid userId, Guid familyId);
 }

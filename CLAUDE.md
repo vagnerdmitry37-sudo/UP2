@@ -80,8 +80,10 @@ All settings live under the `Options:` section (`Options:Database`, `Options:Jwt
 - Access tokens: short-lived HS256 JWTs. `MapInboundClaims = false`; name claim is `sub`, role claim is `JwtClaimTypes.Role`.
 - Refresh tokens: random 64-byte values; only the SHA-256 hash is stored (`RefreshTokens` table). Tokens belong to a **family** (`FamilyId`). Every refresh rotates the token. Reusing a revoked token revokes the whole family (theft detection). A missing or locked-out user also revokes the family.
 - Rotation uses a conditional `ExecuteUpdate` (`RevokedAt == null`) inside a transaction run through `CreateExecutionStrategy()`. This is required because `EnableRetryOnFailure` is on. It guarantees only one concurrent refresh wins.
+- Rotation and every family revocation take a per-family Postgres advisory lock (`pg_advisory_xact_lock`) inside their transaction. Without it, a revocation cannot see the replacement row of a concurrent rotation, and that token would survive logout.
 - The refresh token travels only in an HttpOnly, `SameSite=Strict` `__Secure-refresh_token` cookie (`RefreshTokenCookie`). On a failed refresh the controller deliberately does not clear the cookie.
-- Current phase (3): `POST api/auth/refresh` is implemented. `AuthRoutes.Login` and `AuthRoutes.Logout` are declared but have no endpoints yet.
+- Logout is anonymous (it must work with an expired access token), revokes the cookie's family and always returns 204. It deletes the cookie only when the request carried one, so a cross-site POST cannot log the user out. The access token stays valid until it expires.
+- Current phase (4): register, login, refresh and logout are implemented.
 
 ### Conventions
 

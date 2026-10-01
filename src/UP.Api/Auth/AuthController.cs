@@ -69,4 +69,20 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
 
         return Ok(new AccessTokenResponse(tokens.AccessToken.Value, tokens.AccessToken.ExpiresAt));
     }
+
+    [HttpPost(AuthRoutes.Logout)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+    {
+        string? refreshToken = RefreshTokenCookie.Read(Request);
+        if (string.IsNullOrWhiteSpace(refreshToken))
+        {
+            return NoContent();
+        }
+
+        await refreshTokenService.RevokeFamilyAsync(refreshToken, cancellationToken);
+        RefreshTokenCookie.Delete(Response);
+
+        return NoContent();
+    }
 }
