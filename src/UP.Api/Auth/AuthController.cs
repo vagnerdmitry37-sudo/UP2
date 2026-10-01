@@ -31,6 +31,23 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
         return ValidationProblem(ModelState);
     }
 
+    [HttpPost(AuthRoutes.Login)]
+    [ProducesResponseType<AccessTokenResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<AccessTokenResponse>> Login(LoginRequest request, CancellationToken cancellationToken)
+    {
+        AuthTokens? tokens = await authService.LoginAsync(request.Email, request.Password, cancellationToken);
+        if (tokens is null)
+        {
+            return Unauthorized();
+        }
+
+        RefreshTokenCookie.Append(Response, tokens.RefreshToken);
+
+        return Ok(new AccessTokenResponse(tokens.AccessToken.Value, tokens.AccessToken.ExpiresAt));
+    }
+
     [HttpPost(AuthRoutes.Refresh)]
     [ProducesResponseType<AccessTokenResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

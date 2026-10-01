@@ -14,7 +14,7 @@ internal static class RefreshTokenCookie
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Strict,
-            Path = AuthRoutes.Refresh,
+            Path = "/" + AuthRoutes.Base,
             Expires = token.ExpiresAt,
             IsEssential = true,
         });

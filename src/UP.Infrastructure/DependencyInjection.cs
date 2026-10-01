@@ -93,6 +93,7 @@ public static class DependencyInjection
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddSingleton<IAccessTokenGenerator, JwtAccessTokenGenerator>();
+        services.AddSingleton<RefreshTokenFactory>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IAuthService, AuthService>();
 

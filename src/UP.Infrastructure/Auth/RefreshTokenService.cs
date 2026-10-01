@@ -1,12 +1,7 @@
-using System.Buffers.Text;
-using System.Security.Cryptography;
-using System.Text;
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 using UP.Application.Auth;
 using UP.Infrastructure.Identity;
@@ -18,17 +13,13 @@ internal sealed class RefreshTokenService(
     AppDbContext dbContext,
     UserManager<ApplicationUser> userManager,
     IAccessTokenGenerator accessTokenGenerator,
-    IOptions<RefreshTokenOptions> options,
+    RefreshTokenFactory refreshTokenFactory,
     TimeProvider timeProvider,
     ILogger<RefreshTokenService> logger) : IRefreshTokenService
 {
-    private const int TokenSizeInBytes = 64;
-
-    private readonly RefreshTokenOptions _options = options.Value;
-
     public async Task<AuthTokens?> RefreshAsync(string refreshToken, CancellationToken cancellationToken)
     {
-        string tokenHash = Hash(refreshToken);
+        string tokenHash = RefreshTokenFactory.Hash(refreshToken);
         RefreshToken? current = await dbContext.RefreshTokens
             .AsNoTracking()
             .SingleOrDefaultAsync(token => token.TokenHash == tokenHash, cancellationToken);
@@ -59,7 +50,7 @@ internal sealed class RefreshTokenService(
             return null;
         }
 
-        (RefreshToken replacement, IssuedRefreshToken issued) = CreateRefreshToken(current.UserId, current.FamilyId);
+        (RefreshToken replacement, IssuedRefreshToken issued) = refreshTokenFactory.Create(current.UserId, current.FamilyId);
 
         IExecutionStrategy strategy = dbContext.Database.CreateExecutionStrategy();
         bool rotated = await strategy.ExecuteAsync(() => RotateRefreshToken(current.Id, replacement, now, cancellationToken));
@@ -103,30 +94,8 @@ internal sealed class RefreshTokenService(
         return true;
     }
 
-    private (RefreshToken Entity, IssuedRefreshToken Issued) CreateRefreshToken(Guid userId, Guid familyId)
-    {
-        string rawToken = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(TokenSizeInBytes));
-        DateTimeOffset now = timeProvider.GetUtcNow();
-        DateTimeOffset expiresAt = now.AddDays(_options.LifetimeDays);
-
-        var entity = new RefreshToken
-        {
-            Id = Guid.CreateVersion7(now),
-            UserId = userId,
-            TokenHash = Hash(rawToken),
-            FamilyId = familyId,
-            CreatedAt = now,
-            ExpiresAt = expiresAt,
-        };
-
-        return (entity, new IssuedRefreshToken(rawToken, expiresAt));
-    }
-
     private Task<int> RevokeFamilyAsync(Guid familyId, DateTimeOffset now, CancellationToken cancellationToken) =>
         dbContext.RefreshTokens
             .Where(token => token.FamilyId == familyId && token.RevokedAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(token => token.RevokedAt, now), cancellationToken);
-
-    private static string Hash(string rawToken) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(rawToken)));
 }
