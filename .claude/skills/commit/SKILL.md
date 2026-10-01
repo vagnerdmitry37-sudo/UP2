@@ -1,7 +1,6 @@
 ---
 name: commit
-description: Commit the current changes after auto-formatting and running the verify skill. Stops and reports a checklist table if anything fails. Use when the user runs /commit or asks to commit.
-disable-model-invocation: true
+description: The only way to create a git commit in this repo. Auto-formats, runs the verify skill, then commits with a repo-style message; stops and reports a checklist table if anything fails. Use whenever the user runs /commit or asks to commit, in any wording ("commit", "commit the changes", "make a commit"), instead of running git commit directly. Never pushes.
 ---
 
 Run every step from the repo root, in order. Never skip verification, never use `--no-verify`, and never push.
