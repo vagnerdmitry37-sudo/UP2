@@ -12,6 +12,7 @@ ASP.NET Core Web API on .NET 10 (SDK pinned in `global.json`), EF Core + Npgsql 
 dotnet build UP.slnx                       # build (warnings are errors, see below)
 dotnet run --project src/UP.Api            # run the API
 dotnet format UP.slnx                      # apply .editorconfig style fixes
+dotnet test --solution UP.slnx             # integration tests (Docker must be running)
 
 dotnet tool restore                        # one-time: installs pinned dotnet-ef
 dotnet ef migrations add <Name> --project src/UP.Infrastructure --startup-project src/UP.Api --output-dir Persistence/Migrations
@@ -34,6 +35,15 @@ dotnet user-secrets set "Options:Database:ConnectionString" "Host=localhost;Port
 `Directory.Build.props` enables `TreatWarningsAsErrors`, `Nullable`, `AnalysisLevel=latest-recommended` and `EnforceCodeStyleInBuild`, so analyzer and `.editorconfig` warnings break the build. Migration files are marked `generated_code = true` in `.editorconfig` to stay exempt.
 
 Package versions are managed centrally in `Directory.Packages.props`: add `<PackageVersion>` there and a version-less `<PackageReference>` in the `.csproj`.
+
+## Tests
+
+`tests/UP.Api.IntegrationTests` (xUnit v3 on Microsoft Testing Platform, opted in via `global.json`; Shouldly for assertions) runs the real API in memory against a real PostgreSQL in Docker. SQLite or EF InMemory can't stand in, because the code relies on advisory locks, `ExecuteUpdate` in transactions and unique-violation codes.
+
+- `TestHost/ApiFactory` starts a `postgres:17-alpine` container (Testcontainers), runs the EF migrations, and supplies the connection string and a test JWT key. It runs in environment `Testing`, so no user secrets are needed.
+- Test classes derive from `TestHost/IntegrationTest`. All of them share one collection (one container) and run sequentially. Respawn clears all data before each test.
+- Use `Client` (base address `https://localhost`): the `__Secure-` refresh cookie only round-trips over HTTPS. Assert database state with `QueryDatabaseAsync`.
+- Test classes go in feature folders (`Auth/`). Test names use underscores (`Login_returns_401_for_unknown_email`); CA1707 is off in `tests/.editorconfig`.
 
 ## Architecture
 
@@ -92,4 +102,4 @@ All settings live under the `Options:` section (`Options:Database`, `Options:Jwt
 
 - Inject `TimeProvider` for current time rather than using `DateTimeOffset.UtcNow`; entity IDs use `Guid.CreateVersion7`.
 - Logging uses source-generated `[LoggerMessage]` methods, not `logger.LogX(...)` calls. Each feature keeps them in one `<Feature>Log` class as `ILogger` extension methods with unique event IDs (see `Infrastructure/Auth/AuthLog.cs`: Auth owns 1000–1099).
-- Code describes itself through names. Do not add `/// <summary>` blocks that restate what a type holds, or section-divider comments (`// Registration: 1000–1019`). Comment only a non-obvious *why*, such as a security or concurrency constraint.
+- No comments in code: no `//` or `/* */` comments, no `/// <summary>` blocks, no section dividers, and no "why" comments. Express intent through names (variables, methods, constants, test names). Rationale goes in the commit message, this file or `BACKLOG.md`. Generated migrations are exempt.

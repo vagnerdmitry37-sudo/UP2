@@ -5,4 +5,7 @@
     <Project Path="src/UP.Domain/UP.Domain.csproj" />
     <Project Path="src/UP.Infrastructure/UP.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/UP.Api.IntegrationTests/UP.Api.IntegrationTests.csproj" />
+  </Folder>
 </Solution>

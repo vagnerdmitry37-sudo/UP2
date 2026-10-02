@@ -1,0 +1,4 @@
+# Test-only overrides; everything else comes from the root .editorconfig
+
+[*.cs]
+dotnet_diagnostic.CA1707.severity = none   # Test names use underscores: Login_returns_401_for_unknown_email
