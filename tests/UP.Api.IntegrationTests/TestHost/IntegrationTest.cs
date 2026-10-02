@@ -11,6 +11,8 @@ public abstract class IntegrationTest(ApiFactory factory) : IAsyncLifetime
 
     protected HttpClient Client { get; } = factory.CreateHttpsClient();
 
+    protected static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
+
     public async ValueTask InitializeAsync() => await Factory.ResetDatabaseAsync();
 
     public ValueTask DisposeAsync()
