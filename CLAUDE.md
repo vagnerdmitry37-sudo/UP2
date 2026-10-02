@@ -98,6 +98,47 @@ All settings live under the `Options:` section (`Options:Database`, `Options:Jwt
 - In `AuthController`, `[AllowAnonymous]` goes on each anonymous action, never on the class: a class-level one overrides `[Authorize]` and would make `/me` public.
 - Current phase (4) is complete: register, login, refresh, logout, logout-all and me are implemented.
 
+## Front end
+
+Angular SPA in `client/` (kept out of `src/` so .NET tooling never touches it). Standalone components only, `OnPush` everywhere, signals for state, zoneless, strict TypeScript and `strictTemplates`, SCSS, Vitest. Node version is pinned in `client/.nvmrc` and `engines`.
+
+```bash
+cd client
+npm ci                 # install from package-lock.json
+npm start              # https://localhost:4200, proxies /api to the API
+npm test               # unit tests, single run (npm run test:watch to watch)
+npm run lint           # ESLint, zero warnings allowed
+npm run format:check   # Prettier (npm run format to fix)
+npm run build          # production build to client/dist
+```
+
+`npm start` needs the API running with the `https` profile: `dotnet run --project src/UP.Api --launch-profile https`.
+
+### Same origin, no CORS
+
+The refresh cookie is `Secure`, `SameSite=Strict` and scoped to `/api/auth`, so the browser only sends it when the SPA calls the API on its own origin over HTTPS. The dev server therefore runs on HTTPS and forwards `/api` to `https://localhost:7215` (`client/proxy.conf.json`). `environment.apiBaseUrl` stays the relative `/api`. Do not add CORS to the API.
+
+### Folders
+
+```
+client/src/
+├── styles/            design tokens (CSS custom properties) and base styles
+├── environments/
+└── app/
+    ├── app.ts, app.config.ts, app.routes.ts
+    ├── core/          app-wide singletons: interceptors, guards, error handling, API config, session state
+    ├── shared/        stateless, reusable components, pipes, directives, pure utils
+    ├── layout/        the shell that frames every page
+    └── features/<name>/   one folder per feature: <name>.routes.ts, pages, components, API service, models
+```
+
+- Same rules as the backend: group by feature, keep feature folders flat (no `components/` or `services/` subfolders), create a folder only when something goes in it.
+- Imports point one way: `features → core/shared/layout`, `layout → core/shared`, `core → shared`. A feature never imports another feature. Import other layers through the `@core/*`, `@shared/*`, `@layout/*` and `@features/*` aliases. ESLint (`no-restricted-imports` in `client/eslint.config.js`) enforces all of this.
+- Every feature is lazy-loaded from `app.routes.ts`.
+- A feature's API service is the only place that knows the backend's JSON shapes; it maps them to the feature's own types.
+- File names follow the current CLI style (`home-page.ts`, class `HomePage`), with no `.component` suffix.
+- The no-comments rule applies to the client too.
+
 ### Conventions
 
 - Inject `TimeProvider` for current time rather than using `DateTimeOffset.UtcNow`; entity IDs use `Guid.CreateVersion7`.

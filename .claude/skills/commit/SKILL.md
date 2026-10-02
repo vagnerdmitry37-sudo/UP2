@@ -1,6 +1,6 @@
 ---
 name: commit
-description: The only way to create a git commit in this repo. Auto-formats, runs the verify skill, then commits with a repo-style message; stops and reports a checklist table if anything fails. Use whenever the user runs /commit or asks to commit, in any wording ("commit", "commit the changes", "make a commit"), instead of running git commit directly. Never pushes.
+description: The only way to create a git commit in this repo. Auto-formats, runs the verify skill (and the client checks for changes under client/), then commits with a repo-style message; stops and reports a checklist table if anything fails. Use whenever the user runs /commit or asks to commit, in any wording ("commit", "commit the changes", "make a commit"), instead of running git commit directly. Never pushes.
 ---
 
 Run every step from the repo root, in order. Never skip verification, never use `--no-verify`, and never push.
@@ -10,6 +10,10 @@ Run every step from the repo root, in order. Never skip verification, never use 
 - Run `git status --short` and `git diff HEAD --stat`. If there is nothing to commit, say so and stop.
 - **Scope:** if some files are already staged, commit only those. Otherwise commit all changes shown by `git status`.
 - **Never stage** files that may hold secrets or local state (`.env*`, `*.user`, `secrets.json`, `appsettings.*.local.json`, `bin/`, `obj/`). If one appears in the list, leave it out and mention it in the report.
+- **Front-end changes** (`client/`) have their own checks in `client/.claude/skills/commit/SKILL.md`. Read that file and route by the files in scope:
+  - **Only `client/` files:** follow the client skill instead of this one.
+  - **Only files outside `client/`:** follow this skill.
+  - **Both:** run this skill's steps 2–3 for the .NET side and the client skill's steps 2–3 for `client/`, then make **one** commit if every check on both sides passes. Merge both checklists into one table.
 
 ## 2. Auto-fix formatting
 
