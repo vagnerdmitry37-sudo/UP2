@@ -7,11 +7,11 @@ namespace UP.Api.Auth;
 
 [ApiController]
 [Route(AuthRoutes.Base)]
-[AllowAnonymous]
 public sealed class AuthController(IAuthService authService, IRefreshTokenService refreshTokenService)
     : ControllerBase
 {
     [HttpPost(AuthRoutes.Register)]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status202Accepted)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(RegisterRequest request)
@@ -32,6 +32,7 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
     }
 
     [HttpPost(AuthRoutes.Login)]
+    [AllowAnonymous]
     [ProducesResponseType<AccessTokenResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -49,6 +50,7 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
     }
 
     [HttpPost(AuthRoutes.Refresh)]
+    [AllowAnonymous]
     [ProducesResponseType<AccessTokenResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AccessTokenResponse>> Refresh(CancellationToken cancellationToken)
@@ -71,6 +73,7 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
     }
 
     [HttpPost(AuthRoutes.Logout)]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout()
     {
@@ -87,6 +90,7 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
     }
 
     [HttpPost(AuthRoutes.LogoutAll)]
+    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> LogoutAll()
@@ -105,5 +109,17 @@ public sealed class AuthController(IAuthService authService, IRefreshTokenServic
         RefreshTokenCookie.Delete(Response);
 
         return NoContent();
+    }
+
+    [HttpGet(AuthRoutes.Me)]
+    [Authorize]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [ProducesResponseType<MeResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public ActionResult<MeResponse> Me()
+    {
+        return User.TryGetUserId(out Guid userId) && User.GetEmail() is { Length: > 0 } email
+            ? Ok(new MeResponse(userId, email))
+            : Unauthorized();
     }
 }

@@ -84,7 +84,9 @@ All settings live under the `Options:` section (`Options:Database`, `Options:Jwt
 - The refresh token travels only in an HttpOnly, `SameSite=Strict` `__Secure-refresh_token` cookie (`RefreshTokenCookie`). On a failed refresh the controller deliberately does not clear the cookie.
 - Logout is anonymous (it must work with an expired access token), revokes the cookie's family and always returns 204. It deletes the cookie only when the request carried one, so a cross-site POST cannot log the user out. The access token stays valid until it expires.
 - Logout-all is also cookie-based but requires a live (not revoked, not expired) token, so an old leaked token can't sign the user out everywhere. It revokes all of the user's refresh tokens and answers 401 otherwise.
-- Current phase (4): register, login, refresh, logout and logout-all are implemented.
+- `/me` is `[Authorize]` and reads the ID and email from the access-token claims only (no database), so it can be up to 15 min stale after logout or an email change.
+- In `AuthController`, `[AllowAnonymous]` goes on each anonymous action, never on the class: a class-level one overrides `[Authorize]` and would make `/me` public.
+- Current phase (4) is complete: register, login, refresh, logout, logout-all and me are implemented.
 
 ### Conventions
 
