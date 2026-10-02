@@ -16,7 +16,7 @@ namespace UP.Api.IntegrationTests.TestHost;
 
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private const string JwtKey = "integration-tests-signing-key-not-a-secret-0123456789";
+    public const string JwtKey = "integration-tests-signing-key-not-a-secret-0123456789";
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
@@ -55,8 +55,12 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await _respawner.ResetAsync(connection);
     }
 
-    public HttpClient CreateHttpsClient() =>
-        CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+    public HttpClient CreateHttpsClient(bool handleCookies = true) =>
+        CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            HandleCookies = handleCookies,
+        });
 
     public override async ValueTask DisposeAsync()
     {
