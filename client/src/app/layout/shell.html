@@ -1,5 +1,14 @@
-<header class="header">
-  <a class="brand" routerLink="/">UP</a>
+<header>
+  <p-toolbar class="header">
+    <ng-template #start>
+      <a class="brand" routerLink="/">UP</a>
+    </ng-template>
+    <ng-template #end>
+      @if (session.isAuthenticated()) {
+        <p-button label="Log out" severity="secondary" text (onClick)="logout()" />
+      }
+    </ng-template>
+  </p-toolbar>
 </header>
 <main class="content">
   <router-outlet />

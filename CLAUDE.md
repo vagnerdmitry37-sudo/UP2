@@ -114,6 +114,18 @@ npm run build          # production build to client/dist
 
 `npm start` needs the API running with the `https` profile: `dotnet run --project src/UP.Api --launch-profile https`.
 
+One-time HTTPS setup: the dev server reuses the trusted .NET dev certificate, exported to the git-ignored `client/.cert/` (`sslCert`/`sslKey` in `angular.json`). Without it `npm start` fails with `ENOENT ... .cert/localhost.pem`:
+
+```bash
+dotnet dev-certs https --trust
+mkdir -p client/.cert
+dotnet dev-certs https --export-path client/.cert/localhost.pem --format Pem --no-password
+```
+
+### UI components
+
+UI is built with Optimus UI (`@openng/optimus-ui`, the MIT fork of PrimeNG v21; docs at https://optimus.openng.org). The theme is a black-and-white "Noir" preset (`core/noir-preset.ts`, built on Aura with zinc as primary and surface), wired in `app.config.ts` with `provideOptimus`; dark mode follows the OS. Change the look there, not with custom tokens. Import each component standalone from its entry point (`import { Button } from '@openng/optimus-ui/button'`). Use a library component before writing a custom one. Do not add custom design tokens: for colors in component SCSS use the theme's CSS variables (`--p-text-color`, `--p-content-background`, `--p-primary-color`, ...).
+
 ### Same origin, no CORS
 
 The refresh cookie is `Secure`, `SameSite=Strict` and scoped to `/api/auth`, so the browser only sends it when the SPA calls the API on its own origin over HTTPS. The dev server therefore runs on HTTPS and forwards `/api` to `https://localhost:7215` (`client/proxy.conf.json`). `environment.apiBaseUrl` stays the relative `/api`. Do not add CORS to the API.
@@ -122,7 +134,7 @@ The refresh cookie is `Secure`, `SameSite=Strict` and scoped to `/api/auth`, so 
 
 ```
 client/src/
-├── styles/            design tokens (CSS custom properties) and base styles
+├── styles.scss        global base styles only
 ├── environments/
 └── app/
     ├── app.ts, app.config.ts, app.routes.ts

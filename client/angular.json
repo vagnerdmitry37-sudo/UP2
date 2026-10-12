@@ -65,6 +65,8 @@
         "serve": {
           "builder": "@angular/build:dev-server",
           "options": {
+            "sslCert": ".cert/localhost.pem",
+            "sslKey": ".cert/localhost.key",
             "proxyConfig": "proxy.conf.json",
             "ssl": true
           },
