@@ -30,6 +30,13 @@ dotnet user-secrets set "Options:Jwt:Key" "<at least 32 chars>" --project src/UP
 dotnet user-secrets set "Options:Database:ConnectionString" "Host=localhost;Port=5432;Database=up;Username=up;Password=<pw>" --project src/UP.Api
 ```
 
+Optional: the first admin account, created on startup (see "Auth design"):
+
+```bash
+dotnet user-secrets set "Options:Admin:Email" "admin@up.local" --project src/UP.Api
+dotnet user-secrets set "Options:Admin:Password" "<at least 12 chars>" --project src/UP.Api
+```
+
 ## Build rules
 
 `Directory.Build.props` enables `TreatWarningsAsErrors`, `Nullable`, `AnalysisLevel=latest-recommended` and `EnforceCodeStyleInBuild`, so analyzer and `.editorconfig` warnings break the build. Migration files are marked `generated_code = true` in `.editorconfig` to stay exempt.
@@ -96,6 +103,7 @@ All settings live under the `Options:` section (`Options:Database`, `Options:Jwt
 - Logout-all is also cookie-based but requires a live (not revoked, not expired) token, so an old leaked token can't sign the user out everywhere. It revokes all of the user's refresh tokens and answers 401 otherwise.
 - `/me` is `[Authorize]` and reads the ID and email from the access-token claims only (no database), so it can be up to 15 min stale after logout or an email change.
 - In `AuthController`, `[AllowAnonymous]` goes on each anonymous action, never on the class: a class-level one overrides `[Authorize]` and would make `/me` public.
+- Admin seeding: `Infrastructure/Identity/AdminSeeder` (hosted service) runs on startup when `Options:Admin:Email` is set. It creates the `Admin` role (`Application/Auth/Roles`) and the admin user if missing and adds the role. It never changes an existing user's password, so a password changed later survives restarts. A bad configured password stops startup. Tests don't set `Options:Admin`, so nothing is seeded there.
 - Current phase (4) is complete: register, login, refresh, logout, logout-all and me are implemented.
 
 ## Front end

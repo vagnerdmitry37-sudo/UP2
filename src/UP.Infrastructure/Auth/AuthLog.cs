@@ -42,4 +42,15 @@ internal static partial class AuthLog
     [LoggerMessage(EventId = 1061, Level = LogLevel.Information,
         Message = "User {UserId} logged out everywhere; revoked {RevokedCount} refresh tokens")]
     public static partial void LogUserLoggedOutEverywhere(this ILogger logger, Guid userId, int revokedCount);
+
+    [LoggerMessage(EventId = 1080, Level = LogLevel.Information, Message = "Seeded admin user {UserId}")]
+    public static partial void LogAdminSeeded(this ILogger logger, Guid userId);
+
+    [LoggerMessage(EventId = 1081, Level = LogLevel.Information,
+        Message = "Admin user {UserId} already exists; password left unchanged")]
+    public static partial void LogAdminAlreadyExists(this ILogger logger, Guid userId);
+
+    [LoggerMessage(EventId = 1082, Level = LogLevel.Information,
+        Message = "Admin seeding skipped: Options:Admin:Email is not configured")]
+    public static partial void LogAdminSeedingSkipped(this ILogger logger);
 }

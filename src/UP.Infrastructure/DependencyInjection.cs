@@ -62,8 +62,24 @@ public static class DependencyInjection
             .AddEntityFrameworkStores<AppDbContext>();
 
         services.AddJwtAuthentication();
+        services.AddAdminSeeding();
 
         return services;
+    }
+
+    private static void AddAdminSeeding(this IServiceCollection services)
+    {
+        services.AddOptions<AdminOptions>()
+            .BindConfiguration(AdminOptions.SectionName)
+            .Validate(options =>
+                !options.IsConfigured || options.Email.Contains('@', StringComparison.Ordinal),
+                "Admin email must be a valid email address.")
+            .Validate(options =>
+                !options.IsConfigured || options.Password.Length >= AdminOptions.MinimumPasswordLength,
+                $"Admin password must be at least {AdminOptions.MinimumPasswordLength} characters long.")
+            .ValidateOnStart();
+
+        services.AddHostedService<AdminSeeder>();
     }
 
     private static void AddJwtAuthentication(this IServiceCollection services)
