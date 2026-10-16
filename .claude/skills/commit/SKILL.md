@@ -1,9 +1,9 @@
 ---
 name: commit
-description: The only way to create a git commit in this repo. Auto-formats, runs the verify skill (and the client checks for changes under client/), then commits with a repo-style message; stops and reports a checklist table if anything fails. Use whenever the user runs /commit or asks to commit, in any wording ("commit", "commit the changes", "make a commit"), instead of running git commit directly. Never pushes.
+description: The only way to create a git commit in this repo. Auto-formats, runs the verify skill and the integration tests (and the client checks for changes under client/), then commits with a repo-style message; stops and reports a checklist table if anything fails. Use whenever the user runs /commit or asks to commit, in any wording ("commit", "commit the changes", "make a commit"), instead of running git commit directly. Never pushes.
 ---
 
-Run every step from the repo root, in order. Never skip verification, never use `--no-verify`, and never push.
+Run every step from the repo root, in order. Never skip verification or tests, never use `--no-verify`, and never push.
 
 ## 1. Inspect the changes
 
@@ -13,7 +13,7 @@ Run every step from the repo root, in order. Never skip verification, never use 
 - **Front-end changes** (`client/`) have their own checks in `client/.claude/skills/commit/SKILL.md`. Read that file and route by the files in scope:
   - **Only `client/` files:** follow the client skill instead of this one.
   - **Only files outside `client/`:** follow this skill.
-  - **Both:** run this skill's steps 2–3 for the .NET side and the client skill's steps 2–3 for `client/`, then make **one** commit if every check on both sides passes. Merge both checklists into one table.
+  - **Both:** run this skill's steps 2–4 for the .NET side and the client skill's steps 2–3 for `client/`, then make **one** commit if every check on both sides passes. Merge both checklists into one table.
 
 ## 2. Auto-fix formatting
 
@@ -27,15 +27,26 @@ Afterwards, run `git status --short` again and note which files it changed:
 
 Invoke the `verify` skill (Skill tool, `skill: "verify"`) and follow it. It runs build, style and migration checks and produces the Checklist and Errors tables.
 
-In the Checklist table, add two rows around the verify rows:
+In the Checklist table, add rows around the verify rows:
 - first row: `Auto-format (dotnet format)`, with 🔧 and "N files reformatted", or ✅ and "no changes"
+- after the verify rows: `Tests` (step 4)
 - last row: `Commit`, with its result
 
-## 4. If any check failed: stop, do not commit
+## 4. Run the tests
 
-Leave the working tree as it is (including the auto-format changes). Reply with the verify report (Checklist with `Commit | ❌ | Not created`, the Errors table, and suggested fixes).
+Run `dotnet test --solution UP.slnx` (always required, even for small changes). The integration tests need Docker running.
 
-## 5. If every check passed: commit
+**If even one test fails, do not commit.** Go to step 5. Never skip, disable or delete a failing test to get a commit through.
+
+- Run it even if a verify check failed, so the report is complete. If the build failed, mark `Tests` ⏭️ "skipped: build failed".
+- Report `Tests` as ✅ "N passed", or ❌ "N failed of M". Add each failed test to the Errors table (Type `Test`, the test name, and the first line of its failure message).
+- If Docker is not running, the tests fail to start: mark `Tests` ❌ "Docker not running" and ask the user to start Docker. Never commit without a passing test run.
+
+## 5. If any check failed: stop, do not commit
+
+Leave the working tree as it is (including the auto-format changes). Reply with the report (Checklist with `Commit | ❌ | Not created`, the Errors table, and suggested fixes).
+
+## 6. If every check passed: commit
 
 1. Stage the in-scope files from step 1 and in-scope formatting fixes from step 2 by explicit path (not `git add -A`).
 2. Write the commit message from the staged diff (`git diff --cached`):
