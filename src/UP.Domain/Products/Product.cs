@@ -6,7 +6,6 @@ namespace UP.Domain.Products;
 
 public sealed class Product
 {
-    public const int MaxTypeLength = 50;
     public const int MaxNameLength = 200;
     public const int MaxDescriptionLength = 5000;
     public const int MaxAttributesLength = 16_384;
@@ -18,7 +17,7 @@ public sealed class Product
 
     public Guid Id { get; private set; }
 
-    public string Type { get; private set; } = string.Empty;
+    public ProductType Type { get; private set; }
 
     public string Name { get; private set; } = string.Empty;
 
@@ -40,7 +39,7 @@ public sealed class Product
         ArgumentNullException.ThrowIfNull(details);
         ArgumentNullException.ThrowIfNull(details.Price);
 
-        string validType = ValidType(details.Type);
+        ProductType validType = ValidType(details.Type);
         string validName = ValidName(details.Name);
         string validDescription = ValidDescription(details.Description);
         string validAttributes = ValidAttributes(details.Attributes);
@@ -52,15 +51,10 @@ public sealed class Product
         Attributes = validAttributes;
     }
 
-    private static string ValidType(string type)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(type);
-
-        string normalized = type.Trim().ToLowerInvariant();
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(normalized.Length, MaxTypeLength, nameof(type));
-
-        return normalized;
-    }
+    private static ProductType ValidType(ProductType type) =>
+        Enum.IsDefined(type)
+            ? type
+            : throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown product type.");
 
     private static string ValidName(string name)
     {

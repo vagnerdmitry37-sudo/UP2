@@ -8,6 +8,7 @@ namespace UP.Infrastructure.Products;
 
 internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
+    private const int TypeMaxLength = 50;
     private const int PriceAmountPrecision = 18;
 
     public void Configure(EntityTypeBuilder<Product> builder)
@@ -18,7 +19,8 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(product => product.Id).ValueGeneratedNever();
 
         builder.Property(product => product.Type)
-            .HasMaxLength(Product.MaxTypeLength)
+            .HasConversion<string>()
+            .HasMaxLength(TypeMaxLength)
             .IsRequired();
 
         builder.Property(product => product.Name)
