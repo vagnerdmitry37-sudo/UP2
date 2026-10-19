@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using UP.Domain.Common;
 using UP.Domain.Products;
 
 namespace UP.Infrastructure.Products;
@@ -9,7 +8,11 @@ namespace UP.Infrastructure.Products;
 internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     private const int TypeMaxLength = 50;
+    private const int NameMaxLength = 200;
+    private const int DescriptionMaxLength = 5000;
     private const int PriceAmountPrecision = 18;
+    private const int PriceAmountScale = 2;
+    private const int CurrencyCodeLength = 3;
 
     public void Configure(EntityTypeBuilder<Product> builder)
     {
@@ -24,22 +27,22 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .IsRequired();
 
         builder.Property(product => product.Name)
-            .HasMaxLength(Product.MaxNameLength)
+            .HasMaxLength(NameMaxLength)
             .IsRequired();
 
         builder.Property(product => product.Description)
-            .HasMaxLength(Product.MaxDescriptionLength)
+            .HasMaxLength(DescriptionMaxLength)
             .IsRequired();
 
         builder.ComplexProperty(product => product.Price, price =>
         {
             price.Property(money => money.Amount)
                 .HasColumnName("PriceAmount")
-                .HasPrecision(PriceAmountPrecision, Money.MaxDecimalPlaces);
+                .HasPrecision(PriceAmountPrecision, PriceAmountScale);
 
             price.Property(money => money.Currency)
                 .HasColumnName("PriceCurrency")
-                .HasMaxLength(Money.CurrencyCodeLength)
+                .HasMaxLength(CurrencyCodeLength)
                 .IsFixedLength()
                 .IsRequired();
         });

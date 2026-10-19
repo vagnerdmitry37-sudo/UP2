@@ -161,6 +161,8 @@ client/src/
 
 ### Conventions
 
+- Map between request/response records and Application/Domain types explicitly in the controller (a plain `new ...(...)`), not with a mapping library.
+- Domain entities are plain data models: only their essential fields and relationships, no validation. Validation lives outside the model.
 - Inject `TimeProvider` for current time rather than using `DateTimeOffset.UtcNow`; entity IDs use `Guid.CreateVersion7`.
 - Logging uses source-generated `[LoggerMessage]` methods, not `logger.LogX(...)` calls. Each feature keeps them in one `<Feature>Log` class as `ILogger` extension methods with unique event IDs (see `Infrastructure/Auth/AuthLog.cs`: Auth owns 1000–1099).
 - No comments in code: no `//` or `/* */` comments, no `/// <summary>` blocks, no section dividers, and no "why" comments. Express intent through names (variables, methods, constants, test names). Rationale goes in the commit message, this file or `BACKLOG.md`. Generated migrations are exempt.
