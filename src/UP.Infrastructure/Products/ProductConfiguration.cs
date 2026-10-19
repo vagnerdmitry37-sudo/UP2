@@ -10,9 +10,8 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
     private const int TypeMaxLength = 50;
     private const int NameMaxLength = 200;
     private const int DescriptionMaxLength = 5000;
-    private const int PriceAmountPrecision = 18;
-    private const int PriceAmountScale = 2;
-    private const int CurrencyCodeLength = 3;
+    private const int PricePrecision = 18;
+    private const int PriceScale = 2;
 
     public void Configure(EntityTypeBuilder<Product> builder)
     {
@@ -34,18 +33,8 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasMaxLength(DescriptionMaxLength)
             .IsRequired();
 
-        builder.ComplexProperty(product => product.Price, price =>
-        {
-            price.Property(money => money.Amount)
-                .HasColumnName("PriceAmount")
-                .HasPrecision(PriceAmountPrecision, PriceAmountScale);
-
-            price.Property(money => money.Currency)
-                .HasColumnName("PriceCurrency")
-                .HasMaxLength(CurrencyCodeLength)
-                .IsFixedLength()
-                .IsRequired();
-        });
+        builder.Property(product => product.Price)
+            .HasPrecision(PricePrecision, PriceScale);
 
         builder.Property(product => product.Attributes)
             .HasColumnType("jsonb")
