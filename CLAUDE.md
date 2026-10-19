@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Before creating or changing any C# code, invoke the `developer` skill (`.claude/skills/developer/SKILL.md`). Do this at the start of every coding task, even if it was loaded earlier in the session.** It defines how code is written here: no over-engineering, plain models, validation on request records, and the checks to run before reporting.
 
+**Whenever plan mode is active, or the user asks a design or investigation question (how to approach, compare or choose something), invoke the `investigate` skill (`.claude/skills/investigate/SKILL.md`) first.** It keeps answers brief and clear, with one recommendation and a concrete example.
+
 ## Stack
 
 ASP.NET Core Web API on .NET 10 (SDK pinned in `global.json`), EF Core + Npgsql (PostgreSQL), ASP.NET Core Identity, JWT bearer auth. Solution file is `UP.slnx`.
