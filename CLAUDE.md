@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Before creating or changing any C# code, invoke the `developer` skill (`.claude/skills/developer/SKILL.md`). Do this at the start of every coding task, even if it was loaded earlier in the session.** It defines how code is written here: no over-engineering, plain models, validation on request records, and the checks to run before reporting.
+
 ## Stack
 
 ASP.NET Core Web API on .NET 10 (SDK pinned in `global.json`), EF Core + Npgsql (PostgreSQL), ASP.NET Core Identity, JWT bearer auth. Solution file is `UP.slnx`.
@@ -161,7 +163,7 @@ client/src/
 
 ### Conventions
 
-- Map between request/response records and Application/Domain types explicitly in the controller (a plain `new ...(...)`), not with a mapping library.
+- Map between request/response records and Domain models with Mapperly (`Riok.Mapperly`): one `[Mapper]` static partial class per feature in Api (`Api/Products/ProductMapper.cs`). Keep request/response field names equal to the model so the mapping is a plain one-to-one copy (no flattening); small conversions are private methods in the mapper. Unmapped members break the build. Controllers contain only endpoints, no mapping helpers.
 - Domain entities are plain data models: only their essential fields and relationships, no validation. Validation lives outside the model.
 - Inject `TimeProvider` for current time rather than using `DateTimeOffset.UtcNow`; entity IDs use `Guid.CreateVersion7`.
 - Logging uses source-generated `[LoggerMessage]` methods, not `logger.LogX(...)` calls. Each feature keeps them in one `<Feature>Log` class as `ILogger` extension methods with unique event IDs (see `Infrastructure/Auth/AuthLog.cs`: Auth owns 1000–1099).

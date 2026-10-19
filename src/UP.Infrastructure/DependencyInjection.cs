@@ -8,9 +8,11 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 using UP.Application.Auth;
+using UP.Application.Products;
 using UP.Infrastructure.Auth;
 using UP.Infrastructure.Identity;
 using UP.Infrastructure.Persistence;
+using UP.Infrastructure.Products;
 
 namespace UP.Infrastructure;
 
@@ -63,6 +65,8 @@ public static class DependencyInjection
 
         services.AddJwtAuthentication();
         services.AddAdminSeeding();
+
+        services.AddScoped<IProductService, ProductService>();
 
         return services;
     }

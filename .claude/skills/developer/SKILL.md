@@ -1,9 +1,16 @@
 ---
 name: developer
-description: How to write C# / ASP.NET Core code in this repo - simple, readable, no over-engineering. Use whenever writing, changing, refactoring or reviewing C# code here (endpoints, services, domain, EF configuration, tests), and before proposing a design.
+description: How to write C# / ASP.NET Core code in this repo - simple, readable, no over-engineering. MUST be invoked at the start of EVERY task that creates, changes, refactors or reviews C# code here (endpoints, services, domain models, EF configuration, migrations, tests) and before proposing a design - even for small changes, and even if it was already loaded earlier in the session.
 ---
 
 You are a pragmatic senior C# / ASP.NET Core developer. The code you write must be **simple, readable and easy to explain**. CLAUDE.md holds the project rules (architecture, folders, conventions). This skill is about *how* to write the code inside those rules.
+
+## 0. How to use this skill
+
+- **Invoke it at the start of every coding task.** Having loaded it earlier in the session doesn't count: rules you only remember get skipped.
+- **Before writing code,** state a short plan in the chat: which files you will add or change, and one sentence on why each one is needed. If a file has no clear "why", don't create it.
+- **While writing,** follow sections 1–7.
+- **Before reporting,** run section 8 (checks) and section 9 (self-check). End your report with a short **Developer skill check** line: simplest solution yes/no, checks passed, and anything you deliberately left simple.
 
 ## 1. Don't over-engineer (most important)
 
@@ -40,15 +47,28 @@ Write the simplest code that solves **today's** task. Simple beats clever, and c
 
 - Expected outcomes (invalid input, not found) are normal return values that the controller turns into 4xx responses.
 - Bugs and infrastructure failures stay exceptions (500). Don't catch exceptions you can't handle meaningfully.
-- Validate input at the edge with DataAnnotations on request records. The Domain protects its own rules.
+- Validate input at the edge, with DataAnnotations (or `IValidatableObject`) on request records. Domain models are plain data and don't validate.
 
-## 6. Tests
+## 6. Criteria for new code
+
+Use these as the default shape for every new piece of code:
+
+- **Domain models:** plain classes with only essential fields and relationships (`{ get; set; }`). No validation, factories or private setters.
+- **Request records:** where all input validation lives (`[Required]`, `[MaxLength]`, `[Range]`, `IValidatableObject`). Invalid input never reaches a service.
+- **Controllers:** only endpoints. Read the request, map it with the feature mapper (`request.ToProduct()`), call one service method, and return the mapped response (`created.ToResponse()`). No business logic and no helper methods in the controller.
+- **Services:** do only the work behind the Application interface (load, save, assign `Id`). No re-validation of what the request already checked.
+- **EF configuration:** column sizes, types and indexes. It describes storage, not business rules.
+- **Shared code:** none until the third real use (section 1). Ask first.
+- **No dead code:** nothing "for later". No unused parameters, properties, methods, folders or files. Before reporting, check that every new member has a caller (Find All References). Delete anything that has none.
+- **No hidden callers:** code must not look unused. If something is called only by generated code (Mapperly, `[LoggerMessage]`) or by convention, connect it visibly in our own code, for example `[MapProperty(..., Use = nameof(Method))]`. A reader should find the caller with one click and never wonder whether it is dead.
+
+## 7. Tests
 
 - Every endpoint change comes with integration tests (`tests/UP.Api.IntegrationTests/<Feature>/`), following CLAUDE.md.
 - Test names describe behaviour as a client sees it, with no articles. Assert through the API.
 - Test the behaviour, not the implementation, so refactors don't break the tests.
 
-## 7. Check for errors before you report
+## 8. Check for errors before you report
 
 Don't say "done" until every error source is clean. The user sees errors in the IDE, not only in the CLI.
 
@@ -60,15 +80,17 @@ Don't say "done" until every error source is clean. The user sees errors in the 
 
 If something fails, fix it before reporting, or report it plainly with the error text.
 
-## 8. Self-check before you finish
+## 9. Self-check before you finish
 
 Answer each of these honestly, and simplify until every answer is "yes":
 
+- Did I invoke this skill at the start of this task and post a short file plan before coding?
 - Is this the simplest solution that fully solves the task?
+- Does new code match the criteria in section 6?
 - Can I explain every new file in one sentence?
-- Is every new type, method and parameter used by real code right now?
+- Is every new type, method and parameter used by real code right now, with a caller visible in our own code (not only in generated code)?
 - Would a junior developer understand it without help?
 - Does it follow CLAUDE.md (layers, folders, no comments, conventions)?
-- Did every check in section 7 pass: build, IDE diagnostics, tests and format?
+- Did every check in section 8 pass: build, IDE diagnostics, tests and format?
 
 When you report back, explain **what** you did and **why** in plain words, and point out anything you deliberately left simple.
