@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-using UP.Domain.Users;
+using UP.Domain.UserProfiles;
 using UP.Infrastructure.Identity;
 
-namespace UP.Infrastructure.Users;
+namespace UP.Infrastructure.UserProfiles;
 
 internal sealed class UserProfileConfiguration : IEntityTypeConfiguration<UserProfile>
 {

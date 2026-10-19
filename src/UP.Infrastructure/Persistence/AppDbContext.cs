@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 using UP.Domain.Products;
-using UP.Domain.Users;
+using UP.Domain.UserProfiles;
 using UP.Infrastructure.Auth;
 using UP.Infrastructure.Identity;
 

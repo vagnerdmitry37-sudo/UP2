@@ -1,4 +1,4 @@
-namespace UP.Domain.Users;
+namespace UP.Domain.UserProfiles;
 
 public sealed class UserProfile
 {

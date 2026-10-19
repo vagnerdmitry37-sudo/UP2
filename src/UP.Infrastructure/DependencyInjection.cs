@@ -9,10 +9,12 @@ using Microsoft.IdentityModel.Tokens;
 
 using UP.Application.Auth;
 using UP.Application.Products;
+using UP.Application.UserProfiles;
 using UP.Infrastructure.Auth;
 using UP.Infrastructure.Identity;
 using UP.Infrastructure.Persistence;
 using UP.Infrastructure.Products;
+using UP.Infrastructure.UserProfiles;
 
 namespace UP.Infrastructure;
 
@@ -67,6 +69,7 @@ public static class DependencyInjection
         services.AddAdminSeeding();
 
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IUserProfileService, UserProfileService>();
 
         return services;
     }
