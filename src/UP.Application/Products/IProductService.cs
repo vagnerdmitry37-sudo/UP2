@@ -5,4 +5,6 @@ namespace UP.Application.Products;
 public interface IProductService
 {
     Task<Product> CreateAsync(Product product, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken);
 }

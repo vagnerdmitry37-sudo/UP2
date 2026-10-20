@@ -22,4 +22,13 @@ public sealed class ProductsController(IProductService productService) : Control
 
         return Created($"/{ProductRoutes.Base}/{created.Id}", created.ToResponse());
     }
+
+    [HttpGet]
+    [ProducesResponseType<IReadOnlyList<ProductResponse>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Product> products = await productService.GetAllAsync(cancellationToken);
+
+        return Ok(products.ToResponses());
+    }
 }

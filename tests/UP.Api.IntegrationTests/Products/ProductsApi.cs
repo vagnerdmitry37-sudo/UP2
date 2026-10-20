@@ -50,6 +50,13 @@ internal static class ProductsApi
         return await client.SendAsync(request, CancellationToken);
     }
 
+    public static Task<HttpResponseMessage> GetProductsAsync(this HttpClient client) =>
+        client.GetAsync(ProductsRoute, CancellationToken);
+
+    public static async Task<List<ProductResponse>> ReadProductsAsync(this HttpResponseMessage response) =>
+        await response.Content.ReadFromJsonAsync<List<ProductResponse>>(JsonOptions, CancellationToken)
+        ?? throw new InvalidOperationException("Response has no products.");
+
     public static async Task<ProductResponse> ReadProductAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<ProductResponse>(JsonOptions, CancellationToken)
         ?? throw new InvalidOperationException("Response has no product.");

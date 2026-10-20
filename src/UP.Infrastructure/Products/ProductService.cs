@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 using UP.Application.Products;
 using UP.Domain.Products;
 using UP.Infrastructure.Persistence;
@@ -15,4 +17,10 @@ internal sealed class ProductService(AppDbContext dbContext) : IProductService
 
         return product;
     }
+
+    public async Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken) =>
+        await dbContext.Products
+            .AsNoTracking()
+            .OrderBy(product => product.Id)
+            .ToListAsync(cancellationToken);
 }

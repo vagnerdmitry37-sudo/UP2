@@ -15,5 +15,7 @@ internal static partial class ProductMapper
     [MapProperty(nameof(Product.Attributes), nameof(ProductResponse.Attributes), Use = nameof(ParseAttributes))]
     public static partial ProductResponse ToResponse(this Product product);
 
+    public static partial IReadOnlyList<ProductResponse> ToResponses(this IReadOnlyList<Product> products);
+
     private static JsonElement ParseAttributes(string attributes) => JsonSerializer.Deserialize<JsonElement>(attributes);
 }
