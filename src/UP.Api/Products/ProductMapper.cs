@@ -12,6 +12,9 @@ internal static partial class ProductMapper
     [MapperIgnoreTarget(nameof(Product.Id))]
     public static partial Product ToProduct(this CreateProductRequest request);
 
+    [MapperIgnoreTarget(nameof(Product.Id))]
+    public static partial Product ToProduct(this UpdateProductRequest request);
+
     [MapProperty(nameof(Product.Attributes), nameof(ProductResponse.Attributes), Use = nameof(ParseAttributes))]
     public static partial ProductResponse ToResponse(this Product product);
 

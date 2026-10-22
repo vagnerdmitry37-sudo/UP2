@@ -23,4 +23,24 @@ internal sealed class ProductService(AppDbContext dbContext) : IProductService
             .AsNoTracking()
             .OrderBy(product => product.Id)
             .ToListAsync(cancellationToken);
+
+    public async Task<Product?> GetAsync(Guid id, CancellationToken cancellationToken) =>
+        await dbContext.Products
+            .AsNoTracking()
+            .FirstOrDefaultAsync(product => product.Id == id, cancellationToken);
+
+    public async Task<Product?> UpdateAsync(Product product, CancellationToken cancellationToken)
+    {
+        bool exists = await dbContext.Products.AnyAsync(saved => saved.Id == product.Id, cancellationToken);
+
+        if (!exists)
+        {
+            return null;
+        }
+
+        dbContext.Products.Update(product);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return product;
+    }
 }

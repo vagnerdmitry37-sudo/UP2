@@ -60,6 +60,25 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
     }
 
     [Fact]
+    public async Task Price_sent_as_string_is_rejected()
+    {
+        string accessToken = await SignInAsync();
+
+        HttpResponseMessage response = await Client.CreateProductAsync(
+            accessToken,
+            new
+            {
+                type = "Excursion",
+                name = "Old Town Walk",
+                description = "Three hours through the historic centre",
+                price = "25.50",
+                attributes = new { durationMinutes = 180 },
+            });
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Creating_product_without_sign_in_is_rejected()
     {
         HttpResponseMessage response = await Client.CreateProductAsync(accessToken: null, ProductsApi.NewProduct());
