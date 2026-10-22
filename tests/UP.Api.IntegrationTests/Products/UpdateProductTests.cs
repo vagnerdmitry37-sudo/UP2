@@ -19,15 +19,19 @@ public sealed class UpdateProductTests(ApiFactory factory) : IntegrationTest(fac
     public async Task Updated_product_is_returned()
     {
         string accessToken = await SignInAsync();
-        ProductResponse created = await CreateProductAsync(accessToken);
+        ProductResponse created = (await CreateProductsAsync(accessToken, 1))[0];
 
-        HttpResponseMessage response = await Client.UpdateProductAsync(
+        HttpResponseMessage response = await Client.UpdateProductsAsync(
             accessToken,
-            created.Id,
-            ProductsApi.NewProduct(type: "Transfer", name: "Airport to hotel", price: 40m, attributes: new { from = "Airport" }));
+            ProductsApi.NewProduct(
+                id: created.Id,
+                type: "Transfer",
+                name: "Airport to hotel",
+                price: 40m,
+                attributes: new { from = "Airport" }));
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        ProductResponse product = await response.ReadProductAsync();
+        ProductResponse product = (await response.ReadProductsAsync()).ShouldHaveSingleItem();
         product.Id.ShouldBe(created.Id);
         product.Type.ShouldBe(ProductType.Transfer);
         product.Name.ShouldBe("Airport to hotel");
@@ -36,40 +40,87 @@ public sealed class UpdateProductTests(ApiFactory factory) : IntegrationTest(fac
     }
 
     [Fact]
-    public async Task Updated_product_is_saved()
+    public async Task Several_products_are_updated_in_one_request()
     {
         string accessToken = await SignInAsync();
-        ProductResponse created = await CreateProductAsync(accessToken);
+        List<ProductResponse> created = await CreateProductsAsync(accessToken, 2);
 
-        await Client.UpdateProductAsync(accessToken, created.Id, ProductsApi.NewProduct(name: "Night Walk"));
+        HttpResponseMessage response = await Client.UpdateProductsAsync(
+            accessToken,
+            ProductsApi.NewProduct(id: created[0].Id, name: "Night Walk"),
+            ProductsApi.NewProduct(id: created[1].Id, name: "Food Tour"));
 
-        string savedName = await QueryDatabaseAsync(db => db.Products
-            .Where(product => product.Id == created.Id)
-            .Select(product => product.Name)
-            .SingleAsync(CancellationToken));
-        savedName.ShouldBe("Night Walk");
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await SavedNamesAsync()).ShouldBe(["Night Walk", "Food Tour"], ignoreOrder: true);
     }
 
     [Fact]
-    public async Task Updating_unknown_product_returns_404()
+    public async Task One_invalid_product_rejects_the_whole_request_and_saves_nothing()
     {
         string accessToken = await SignInAsync();
+        List<ProductResponse> created = await CreateProductsAsync(accessToken, 2);
 
-        HttpResponseMessage response = await Client.UpdateProductAsync(
+        HttpResponseMessage response = await Client.UpdateProductsAsync(
             accessToken,
-            Guid.CreateVersion7(),
-            ProductsApi.NewProduct());
+            ProductsApi.NewProduct(id: created[0].Id, name: "Night Walk"),
+            ProductsApi.NewProduct(id: created[1].Id, name: ""));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync(CancellationToken)).ShouldContain("[1].Name");
+        (await SavedNamesAsync()).ShouldBe(["Old Town Walk", "Old Town Walk"]);
+    }
+
+    [Fact]
+    public async Task Unknown_product_returns_404_and_saves_nothing()
+    {
+        string accessToken = await SignInAsync();
+        List<ProductResponse> created = await CreateProductsAsync(accessToken, 1);
+        Guid unknownId = Guid.CreateVersion7();
+
+        HttpResponseMessage response = await Client.UpdateProductsAsync(
+            accessToken,
+            ProductsApi.NewProduct(id: created[0].Id, name: "Night Walk"),
+            ProductsApi.NewProduct(id: unknownId));
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(CancellationToken)).ShouldContain(unknownId.ToString());
+        (await SavedNamesAsync()).ShouldBe(["Old Town Walk"]);
     }
 
     [Fact]
-    public async Task Updating_product_without_sign_in_is_rejected()
+    public async Task Same_product_twice_is_rejected()
     {
         string accessToken = await SignInAsync();
-        ProductResponse created = await CreateProductAsync(accessToken);
+        ProductResponse created = (await CreateProductsAsync(accessToken, 1))[0];
 
-        HttpResponseMessage response = await Client.UpdateProductAsync(accessToken: null, created.Id, ProductsApi.NewProduct());
+        HttpResponseMessage response = await Client.UpdateProductsAsync(
+            accessToken,
+            ProductsApi.NewProduct(id: created.Id, name: "Night Walk"),
+            ProductsApi.NewProduct(id: created.Id, name: "Food Tour"));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await SavedNamesAsync()).ShouldBe(["Old Town Walk"]);
+    }
+
+    [Fact]
+    public async Task Empty_list_is_rejected()
+    {
+        string accessToken = await SignInAsync();
+
+        HttpResponseMessage response = await Client.UpdateProductsAsync(accessToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Updating_products_without_sign_in_is_rejected()
+    {
+        string accessToken = await SignInAsync();
+        ProductResponse created = (await CreateProductsAsync(accessToken, 1))[0];
+
+        HttpResponseMessage response = await Client.UpdateProductsAsync(
+            accessToken: null,
+            ProductsApi.NewProduct(id: created.Id));
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
@@ -80,6 +131,14 @@ public sealed class UpdateProductTests(ApiFactory factory) : IntegrationTest(fac
         return token.AccessToken;
     }
 
-    private async Task<ProductResponse> CreateProductAsync(string accessToken) =>
-        await (await Client.CreateProductAsync(accessToken, ProductsApi.NewProduct())).ReadProductAsync();
+    private async Task<List<ProductResponse>> CreateProductsAsync(string accessToken, int count) =>
+        await (await Client.CreateProductsAsync(
+            accessToken,
+            [.. Enumerable.Range(0, count).Select(_ => ProductsApi.NewProduct())])).ReadProductsAsync();
+
+    private Task<List<string>> SavedNamesAsync() =>
+        QueryDatabaseAsync(db => db.Products
+            .OrderBy(product => product.Id)
+            .Select(product => product.Name)
+            .ToListAsync(CancellationToken));
 }

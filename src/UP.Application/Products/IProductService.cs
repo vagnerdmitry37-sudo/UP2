@@ -4,11 +4,9 @@ namespace UP.Application.Products;
 
 public interface IProductService
 {
-    Task<Product> CreateAsync(Product product, CancellationToken cancellationToken);
+    Task<IReadOnlyList<Product>> CreateAsync(IReadOnlyList<Product> products, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<Product>> GetAllAsync(IReadOnlyList<Guid>? ids, CancellationToken cancellationToken);
 
-    Task<Product?> GetAsync(Guid id, CancellationToken cancellationToken);
-
-    Task<Product?> UpdateAsync(Product product, CancellationToken cancellationToken);
+    Task<UpdateProductsResult> UpdateAsync(IReadOnlyList<Product> products, CancellationToken cancellationToken);
 }

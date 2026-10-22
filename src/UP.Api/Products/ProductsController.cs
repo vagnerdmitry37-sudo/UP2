@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,53 +12,73 @@ namespace UP.Api.Products;
 [Route(ProductRoutes.Base)]
 public sealed class ProductsController(IProductService productService) : ControllerBase
 {
+    private const int MaxProductsPerRequest = 100;
+
     [HttpPost]
     [Authorize]
-    [ProducesResponseType<ProductResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<IReadOnlyList<ProductResponse>>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ProductResponse>> Create(
-        CreateProductRequest request,
+    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> Create(
+        [MinLength(1), MaxLength(MaxProductsPerRequest)] IReadOnlyList<CreateProductRequest> requests,
         CancellationToken cancellationToken)
     {
-        Product created = await productService.CreateAsync(request.ToProduct(), cancellationToken);
+        IReadOnlyList<Product> created = await productService.CreateAsync(
+            [.. requests.Select(request => request.ToProduct())],
+            cancellationToken);
 
-        return Created($"/{ProductRoutes.Base}/{created.Id}", created.ToResponse());
+        return StatusCode(StatusCodes.Status201Created, created.ToResponses());
     }
 
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<ProductResponse>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(CancellationToken cancellationToken)
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(
+        [FromQuery, MaxLength(MaxProductsPerRequest)] Guid[]? ids,
+        CancellationToken cancellationToken)
     {
-        IReadOnlyList<Product> products = await productService.GetAllAsync(cancellationToken);
+        Guid[]? requestedIds = ids is { Length: > 0 } ? [.. ids.Distinct()] : null;
+        IReadOnlyList<Product> products = await productService.GetAllAsync(requestedIds, cancellationToken);
+
+        if (requestedIds is not null && products.Count != requestedIds.Length)
+        {
+            IEnumerable<Guid> missingIds = requestedIds.Except(products.Select(product => product.Id));
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Products not found: {string.Join(", ", missingIds)}");
+        }
 
         return Ok(products.ToResponses());
     }
 
-    [HttpGet(ProductRoutes.ById)]
-    [ProducesResponseType<ProductResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ProductResponse>> Get(Guid id, CancellationToken cancellationToken)
-    {
-        Product? product = await productService.GetAsync(id, cancellationToken);
-
-        return product is null ? NotFound() : Ok(product.ToResponse());
-    }
-
-    [HttpPut(ProductRoutes.ById)]
+    [HttpPut]
     [Authorize]
-    [ProducesResponseType<ProductResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<IReadOnlyList<ProductResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ProductResponse>> Update(
-        Guid id,
-        UpdateProductRequest request,
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> Update(
+        [MinLength(1), MaxLength(MaxProductsPerRequest)] IReadOnlyList<UpdateProductRequest> requests,
         CancellationToken cancellationToken)
     {
-        Product product = request.ToProduct();
-        product.Id = id;
+        if (requests.DistinctBy(request => request.Id).Count() != requests.Count)
+        {
+            ModelState.AddModelError(string.Empty, "Each product can appear only once.");
+            return ValidationProblem(ModelState);
+        }
 
-        Product? updated = await productService.UpdateAsync(product, cancellationToken);
+        UpdateProductsResult result = await productService.UpdateAsync(
+            [.. requests.Select(request => request.ToProduct())],
+            cancellationToken);
 
-        return updated is null ? NotFound() : Ok(updated.ToResponse());
+        if (result.MissingIds.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Products not found: {string.Join(", ", result.MissingIds)}");
+        }
+
+        return Ok(result.Updated.ToResponses());
     }
 }

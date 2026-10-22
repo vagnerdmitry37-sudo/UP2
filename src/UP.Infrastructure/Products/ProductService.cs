@@ -8,39 +8,60 @@ namespace UP.Infrastructure.Products;
 
 internal sealed class ProductService(AppDbContext dbContext) : IProductService
 {
-    public async Task<Product> CreateAsync(Product product, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Product>> CreateAsync(
+        IReadOnlyList<Product> products,
+        CancellationToken cancellationToken)
     {
-        product.Id = Guid.CreateVersion7();
-
-        dbContext.Products.Add(product);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return product;
-    }
-
-    public async Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken) =>
-        await dbContext.Products
-            .AsNoTracking()
-            .OrderBy(product => product.Id)
-            .ToListAsync(cancellationToken);
-
-    public async Task<Product?> GetAsync(Guid id, CancellationToken cancellationToken) =>
-        await dbContext.Products
-            .AsNoTracking()
-            .FirstOrDefaultAsync(product => product.Id == id, cancellationToken);
-
-    public async Task<Product?> UpdateAsync(Product product, CancellationToken cancellationToken)
-    {
-        bool exists = await dbContext.Products.AnyAsync(saved => saved.Id == product.Id, cancellationToken);
-
-        if (!exists)
+        foreach (Product product in products)
         {
-            return null;
+            product.Id = Guid.CreateVersion7();
         }
 
-        dbContext.Products.Update(product);
+        dbContext.Products.AddRange(products);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return product;
+        return products;
+    }
+
+    public async Task<IReadOnlyList<Product>> GetAllAsync(
+        IReadOnlyList<Guid>? ids,
+        CancellationToken cancellationToken)
+    {
+        if (ids is null)
+        {
+            return await dbContext.Products
+                .AsNoTracking()
+                .OrderBy(product => product.Id)
+                .ToListAsync(cancellationToken);
+        }
+
+        List<Product> products = await dbContext.Products
+            .AsNoTracking()
+            .Where(product => ids.Contains(product.Id))
+            .ToListAsync(cancellationToken);
+
+        return [.. ids.Select(id => products.Find(product => product.Id == id)).OfType<Product>()];
+    }
+
+    public async Task<UpdateProductsResult> UpdateAsync(
+        IReadOnlyList<Product> products,
+        CancellationToken cancellationToken)
+    {
+        List<Guid> ids = products.Select(product => product.Id).ToList();
+        List<Guid> existingIds = await dbContext.Products
+            .Where(product => ids.Contains(product.Id))
+            .Select(product => product.Id)
+            .ToListAsync(cancellationToken);
+        List<Guid> missingIds = ids.Except(existingIds).ToList();
+
+        if (missingIds.Count > 0)
+        {
+            return new UpdateProductsResult([], missingIds);
+        }
+
+        dbContext.Products.UpdateRange(products);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new UpdateProductsResult(products, []);
     }
 }

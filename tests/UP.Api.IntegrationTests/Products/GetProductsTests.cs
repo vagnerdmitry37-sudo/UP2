@@ -26,8 +26,8 @@ public sealed class GetProductsTests(ApiFactory factory) : IntegrationTest(facto
     public async Task Created_products_are_listed_in_creation_order()
     {
         AccessTokenResponse token = await Client.RegisterAndLoginAsync(Email, Password);
-        await Client.CreateProductAsync(token.AccessToken, ProductsApi.NewProduct(name: "Old Town Walk"));
-        await Client.CreateProductAsync(token.AccessToken, ProductsApi.NewProduct(type: "Transfer", name: "Airport to hotel"));
+        await Client.CreateProductsAsync(token.AccessToken, ProductsApi.NewProduct(name: "Old Town Walk"));
+        await Client.CreateProductsAsync(token.AccessToken, ProductsApi.NewProduct(type: "Transfer", name: "Airport to hotel"));
 
         HttpResponseMessage response = await Client.GetProductsAsync();
 
@@ -45,4 +45,56 @@ public sealed class GetProductsTests(ApiFactory factory) : IntegrationTest(facto
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task Requested_products_are_returned_in_requested_order()
+    {
+        AccessTokenResponse token = await Client.RegisterAndLoginAsync(Email, Password);
+        ProductResponse walk = await CreateProductAsync(token.AccessToken, "Old Town Walk");
+        await CreateProductAsync(token.AccessToken, "Food Tour");
+        ProductResponse transfer = await CreateProductAsync(token.AccessToken, "Airport to hotel");
+
+        HttpResponseMessage response = await Client.GetProductsAsync(transfer.Id, walk.Id);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await response.ReadProductsAsync()).Select(product => product.Name).ShouldBe(["Airport to hotel", "Old Town Walk"]);
+    }
+
+    [Fact]
+    public async Task Same_id_twice_returns_the_product_once()
+    {
+        AccessTokenResponse token = await Client.RegisterAndLoginAsync(Email, Password);
+        ProductResponse walk = await CreateProductAsync(token.AccessToken, "Old Town Walk");
+
+        HttpResponseMessage response = await Client.GetProductsAsync(walk.Id, walk.Id);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await response.ReadProductsAsync()).ShouldHaveSingleItem().Id.ShouldBe(walk.Id);
+    }
+
+    [Fact]
+    public async Task Unknown_id_returns_404_naming_it()
+    {
+        AccessTokenResponse token = await Client.RegisterAndLoginAsync(Email, Password);
+        ProductResponse walk = await CreateProductAsync(token.AccessToken, "Old Town Walk");
+        Guid unknownId = Guid.CreateVersion7();
+
+        HttpResponseMessage response = await Client.GetProductsAsync(walk.Id, unknownId);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(CancellationToken)).ShouldContain(unknownId.ToString());
+    }
+
+    [Fact]
+    public async Task More_than_one_hundred_ids_are_rejected()
+    {
+        HttpResponseMessage response = await Client.GetProductsAsync(
+            [.. Enumerable.Range(0, 101).Select(_ => Guid.CreateVersion7())]);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    private async Task<ProductResponse> CreateProductAsync(string accessToken, string name) =>
+        (await (await Client.CreateProductsAsync(accessToken, ProductsApi.NewProduct(name: name)))
+            .ReadProductsAsync()).ShouldHaveSingleItem();
 }
