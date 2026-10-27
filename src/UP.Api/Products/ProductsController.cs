@@ -31,17 +31,29 @@ public sealed class ProductsController(IProductService productService) : Control
     }
 
     [HttpGet]
+    [ProducesResponseType<ProductsPageResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ProductsPageResponse>> GetAll(
+        [FromQuery] GetProductsRequest request,
+        CancellationToken cancellationToken)
+    {
+        ProductsPage page = await productService.GetAllAsync(request.ToQuery(), cancellationToken);
+
+        return Ok(page.ToResponse());
+    }
+
+    [HttpGet(ProductRoutes.ByIds)]
     [ProducesResponseType<IReadOnlyList<ProductResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetAll(
-        [FromQuery, MaxLength(MaxProductsPerRequest)] Guid[]? ids,
+    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetByIds(
+        [FromQuery, Required, MinLength(1), MaxLength(MaxProductsPerRequest)] Guid[] ids,
         CancellationToken cancellationToken)
     {
-        Guid[]? requestedIds = ids is { Length: > 0 } ? [.. ids.Distinct()] : null;
-        IReadOnlyList<Product> products = await productService.GetAllAsync(requestedIds, cancellationToken);
+        Guid[] requestedIds = [.. ids.Distinct()];
+        IReadOnlyList<Product> products = await productService.GetByIdsAsync(requestedIds, cancellationToken);
 
-        if (requestedIds is not null && products.Count != requestedIds.Length)
+        if (products.Count != requestedIds.Length)
         {
             IEnumerable<Guid> missingIds = requestedIds.Except(products.Select(product => product.Id));
             return Problem(
@@ -80,5 +92,27 @@ public sealed class ProductsController(IProductService productService) : Control
         }
 
         return Ok(result.Updated.ToResponses());
+    }
+
+    [HttpDelete]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(
+        [FromQuery, Required, MinLength(1), MaxLength(MaxProductsPerRequest)] Guid[] ids,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Guid> missingIds = await productService.DeleteAsync([.. ids.Distinct()], cancellationToken);
+
+        if (missingIds.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Products not found: {string.Join(", ", missingIds)}");
+        }
+
+        return NoContent();
     }
 }

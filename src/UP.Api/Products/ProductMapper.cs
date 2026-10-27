@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using Riok.Mapperly.Abstractions;
 
+using UP.Application.Products;
 using UP.Domain.Products;
 
 namespace UP.Api.Products;
@@ -18,6 +19,10 @@ internal static partial class ProductMapper
     public static partial ProductResponse ToResponse(this Product product);
 
     public static partial IReadOnlyList<ProductResponse> ToResponses(this IReadOnlyList<Product> products);
+
+    public static partial ProductsQuery ToQuery(this GetProductsRequest request);
+
+    public static partial ProductsPageResponse ToResponse(this ProductsPage page);
 
     private static JsonElement ParseAttributes(string attributes) => JsonSerializer.Deserialize<JsonElement>(attributes);
 }

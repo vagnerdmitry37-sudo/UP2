@@ -8,6 +8,8 @@ namespace UP.Infrastructure.Products;
 
 internal sealed class ProductService(AppDbContext dbContext) : IProductService
 {
+    private const string LikeEscape = @"\";
+
     public async Task<IReadOnlyList<Product>> CreateAsync(
         IReadOnlyList<Product> products,
         CancellationToken cancellationToken)
@@ -23,18 +25,31 @@ internal sealed class ProductService(AppDbContext dbContext) : IProductService
         return products;
     }
 
-    public async Task<IReadOnlyList<Product>> GetAllAsync(
-        IReadOnlyList<Guid>? ids,
-        CancellationToken cancellationToken)
+    public async Task<ProductsPage> GetAllAsync(ProductsQuery query, CancellationToken cancellationToken)
     {
-        if (ids is null)
+        IQueryable<Product> matching = dbContext.Products.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(query.GlobalFilter))
         {
-            return await dbContext.Products
-                .AsNoTracking()
-                .OrderBy(product => product.Id)
-                .ToListAsync(cancellationToken);
+            string pattern = $"%{EscapeLikePattern(query.GlobalFilter.Trim())}%";
+            matching = matching.Where(product =>
+                EF.Functions.ILike(product.Name, pattern, LikeEscape)
+                || EF.Functions.ILike(product.Description, pattern, LikeEscape));
         }
 
+        int totalRecords = await matching.CountAsync(cancellationToken);
+        List<Product> items = await Sort(matching, query.SortField, query.SortOrder)
+            .Skip(query.First)
+            .Take(query.Rows)
+            .ToListAsync(cancellationToken);
+
+        return new ProductsPage(items, totalRecords);
+    }
+
+    public async Task<IReadOnlyList<Product>> GetByIdsAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken cancellationToken)
+    {
         List<Product> products = await dbContext.Products
             .AsNoTracking()
             .Where(product => ids.Contains(product.Id))
@@ -64,4 +79,57 @@ internal sealed class ProductService(AppDbContext dbContext) : IProductService
 
         return new UpdateProductsResult(products, []);
     }
+
+    public async Task<IReadOnlyList<Guid>> DeleteAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        List<Guid> existingIds = await dbContext.Products
+            .Where(product => ids.Contains(product.Id))
+            .Select(product => product.Id)
+            .ToListAsync(cancellationToken);
+        List<Guid> missingIds = ids.Except(existingIds).ToList();
+
+        if (missingIds.Count > 0)
+        {
+            return missingIds;
+        }
+
+        await dbContext.Products
+            .Where(product => ids.Contains(product.Id))
+            .ExecuteDeleteAsync(cancellationToken);
+
+        return [];
+    }
+
+    private static IQueryable<Product> Sort(
+        IQueryable<Product> products,
+        ProductSortField? sortField,
+        int sortOrder)
+    {
+        bool descending = sortOrder < 0;
+
+        IOrderedQueryable<Product> sorted = sortField switch
+        {
+            ProductSortField.Name => descending
+                ? products.OrderByDescending(product => product.Name)
+                : products.OrderBy(product => product.Name),
+            ProductSortField.Type => descending
+                ? products.OrderByDescending(product => product.Type)
+                : products.OrderBy(product => product.Type),
+            ProductSortField.Price => descending
+                ? products.OrderByDescending(product => product.Price)
+                : products.OrderBy(product => product.Price),
+            _ => descending
+                ? products.OrderByDescending(product => product.Id)
+                : products.OrderBy(product => product.Id),
+        };
+
+        return sorted.ThenBy(product => product.Id);
+    }
+
+    private static string EscapeLikePattern(string text) =>
+        text.Replace(LikeEscape, LikeEscape + LikeEscape, StringComparison.Ordinal)
+            .Replace("%", LikeEscape + "%", StringComparison.Ordinal)
+            .Replace("_", LikeEscape + "_", StringComparison.Ordinal);
 }

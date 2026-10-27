@@ -23,13 +23,14 @@ internal static class ProductsApi
         string name = "Old Town Walk",
         decimal price = 25.50m,
         object? attributes = null,
-        Guid? id = null) =>
+        Guid? id = null,
+        string description = "Three hours through the historic centre") =>
         new
         {
             id,
             type,
             name,
-            description = "Three hours through the historic centre",
+            description,
             price,
             attributes = attributes ?? new { durationMinutes = 180, meetingPoint = "Main square" },
         };
@@ -46,14 +47,38 @@ internal static class ProductsApi
         params object[] products) =>
         client.SendProductsAsync(HttpMethod.Put, accessToken, products);
 
-    public static Task<HttpResponseMessage> GetProductsAsync(this HttpClient client, params Guid[] ids) =>
+    public static Task<HttpResponseMessage> GetProductsAsync(this HttpClient client, string query = "") =>
+        client.GetAsync(query.Length == 0 ? ProductsRoute : $"{ProductsRoute}?{query}", CancellationToken);
+
+    public static Task<HttpResponseMessage> GetProductsByIdsAsync(this HttpClient client, params Guid[] ids) =>
         client.GetAsync(
-            ids.Length == 0 ? ProductsRoute : $"{ProductsRoute}?{string.Join("&", ids.Select(id => $"ids={id}"))}",
+            $"{ProductsRoute}/by-ids?{string.Join("&", ids.Select(id => $"ids={id}"))}",
             CancellationToken);
+
+    public static async Task<HttpResponseMessage> DeleteProductsAsync(
+        this HttpClient client,
+        string? accessToken,
+        params Guid[] ids)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"{ProductsRoute}?{string.Join("&", ids.Select(id => $"ids={id}"))}");
+
+        if (accessToken is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return await client.SendAsync(request, CancellationToken);
+    }
 
     public static async Task<List<ProductResponse>> ReadProductsAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<List<ProductResponse>>(JsonOptions, CancellationToken)
         ?? throw new InvalidOperationException("Response has no products.");
+
+    public static async Task<ProductsPageResponse> ReadProductsPageAsync(this HttpResponseMessage response) =>
+        await response.Content.ReadFromJsonAsync<ProductsPageResponse>(JsonOptions, CancellationToken)
+        ?? throw new InvalidOperationException("Response has no products page.");
 
     private static async Task<HttpResponseMessage> SendProductsAsync(
         this HttpClient client,
