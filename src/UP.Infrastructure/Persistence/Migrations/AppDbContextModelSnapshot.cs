@@ -152,6 +152,41 @@ namespace UP.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("UP.Domain.HistoryRecords.HistoryRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Changes")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EntityType", "EntityId", "OccurredAt");
+
+                    b.ToTable("HistoryRecords", (string)null);
+                });
+
             modelBuilder.Entity("UP.Domain.Products.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -187,7 +222,7 @@ namespace UP.Infrastructure.Persistence.Migrations
                     b.ToTable("Products", (string)null);
                 });
 
-            modelBuilder.Entity("UP.Domain.Users.UserProfile", b =>
+            modelBuilder.Entity("UP.Domain.UserProfiles.UserProfile", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -363,11 +398,11 @@ namespace UP.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("UP.Domain.Users.UserProfile", b =>
+            modelBuilder.Entity("UP.Domain.UserProfiles.UserProfile", b =>
                 {
                     b.HasOne("UP.Infrastructure.Identity.ApplicationUser", null)
                         .WithOne()
-                        .HasForeignKey("UP.Domain.Users.UserProfile", "Id")
+                        .HasForeignKey("UP.Domain.UserProfiles.UserProfile", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

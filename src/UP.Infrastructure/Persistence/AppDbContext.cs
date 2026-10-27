@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
+using UP.Domain.HistoryRecords;
 using UP.Domain.Products;
 using UP.Domain.UserProfiles;
 using UP.Infrastructure.Auth;
@@ -17,6 +18,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Product> Products => Set<Product>();
 
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
+
+    public DbSet<HistoryRecord> HistoryRecords => Set<HistoryRecord>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

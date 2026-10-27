@@ -62,19 +62,23 @@ internal sealed class ProductService(AppDbContext dbContext) : IProductService
         IReadOnlyList<Product> products,
         CancellationToken cancellationToken)
     {
-        List<Guid> ids = products.Select(product => product.Id).ToList();
-        List<Guid> existingIds = await dbContext.Products
+        List<Guid> ids = [.. products.Select(product => product.Id)];
+        List<Product> existingProducts = await dbContext.Products
             .Where(product => ids.Contains(product.Id))
-            .Select(product => product.Id)
             .ToListAsync(cancellationToken);
-        List<Guid> missingIds = ids.Except(existingIds).ToList();
+        List<Guid> missingIds = [.. ids.Except(existingProducts.Select(product => product.Id))];
 
         if (missingIds.Count > 0)
         {
             return new UpdateProductsResult([], missingIds);
         }
 
-        dbContext.Products.UpdateRange(products);
+        foreach (Product existingProduct in existingProducts)
+        {
+            Product product = products.First(product => product.Id == existingProduct.Id);
+            dbContext.Entry(existingProduct).CurrentValues.SetValues(product);
+        }
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new UpdateProductsResult(products, []);
@@ -84,20 +88,18 @@ internal sealed class ProductService(AppDbContext dbContext) : IProductService
         IReadOnlyList<Guid> ids,
         CancellationToken cancellationToken)
     {
-        List<Guid> existingIds = await dbContext.Products
+        List<Product> existingProducts = await dbContext.Products
             .Where(product => ids.Contains(product.Id))
-            .Select(product => product.Id)
             .ToListAsync(cancellationToken);
-        List<Guid> missingIds = ids.Except(existingIds).ToList();
+        List<Guid> missingIds = [.. ids.Except(existingProducts.Select(product => product.Id))];
 
         if (missingIds.Count > 0)
         {
             return missingIds;
         }
 
-        await dbContext.Products
-            .Where(product => ids.Contains(product.Id))
-            .ExecuteDeleteAsync(cancellationToken);
+        dbContext.Products.RemoveRange(existingProducts);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         return [];
     }

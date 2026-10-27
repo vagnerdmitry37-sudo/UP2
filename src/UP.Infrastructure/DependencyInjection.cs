@@ -8,9 +8,11 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 using UP.Application.Auth;
+using UP.Application.HistoryRecords;
 using UP.Application.Products;
 using UP.Application.UserProfiles;
 using UP.Infrastructure.Auth;
+using UP.Infrastructure.HistoryRecords;
 using UP.Infrastructure.Identity;
 using UP.Infrastructure.Persistence;
 using UP.Infrastructure.Products;
@@ -46,6 +48,7 @@ public static class DependencyInjection
             });
 
             options.EnableSensitiveDataLogging(database.EnableSensitiveDataLogging);
+            options.AddInterceptors(serviceProvider.GetRequiredService<HistoryInterceptor>());
         });
 
         services.AddIdentityCore<ApplicationUser>(options =>
@@ -70,6 +73,8 @@ public static class DependencyInjection
 
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
+        services.AddScoped<IHistoryRecordService, HistoryRecordService>();
+        services.AddScoped<HistoryInterceptor>();
 
         return services;
     }

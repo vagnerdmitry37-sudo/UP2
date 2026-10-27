@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text.Json.Serialization;
 
+using UP.Api.HistoryRecords;
+using UP.Application.HistoryRecords;
 using UP.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +21,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
 });
 builder.Services.AddOpenApi();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 
 if (!isGeneratingOpenApiDocument)
 {
