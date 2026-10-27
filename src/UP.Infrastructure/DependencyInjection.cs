@@ -1,3 +1,6 @@
+using Amazon.Runtime;
+using Amazon.S3;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -72,13 +75,7 @@ public static class DependencyInjection
 
         services.AddJwtAuthentication();
         services.AddAdminSeeding();
-
-        services.AddOptions<R2Options>()
-            .BindConfiguration(R2Options.SectionName)
-            .Validate(options =>
-                Uri.TryCreate(options.PublicBaseUrl, UriKind.Absolute, out _),
-                "R2 public base URL must be an absolute URL.")
-            .ValidateOnStart();
+        services.AddR2Storage();
 
         services.AddScoped<IImageService, ImageService>();
         services.AddScoped<IProductService, ProductService>();
@@ -102,6 +99,41 @@ public static class DependencyInjection
             .ValidateOnStart();
 
         services.AddHostedService<AdminSeeder>();
+    }
+
+    private static void AddR2Storage(this IServiceCollection services)
+    {
+        services.AddOptions<R2Options>()
+            .BindConfiguration(R2Options.SectionName)
+            .Validate(options =>
+                Uri.TryCreate(options.ServiceUrl, UriKind.Absolute, out _),
+                "R2 service URL must be an absolute URL.")
+            .Validate(options =>
+                !string.IsNullOrWhiteSpace(options.AccessKeyId) && !string.IsNullOrWhiteSpace(options.SecretAccessKey),
+                "R2 access key ID and secret access key must be configured.")
+            .Validate(options =>
+                !string.IsNullOrWhiteSpace(options.Bucket),
+                "R2 bucket must be configured.")
+            .Validate(options =>
+                Uri.TryCreate(options.PublicBaseUrl, UriKind.Absolute, out _),
+                "R2 public base URL must be an absolute URL.")
+            .ValidateOnStart();
+
+        services.AddSingleton<IAmazonS3>(serviceProvider =>
+        {
+            R2Options r2 = serviceProvider.GetRequiredService<IOptions<R2Options>>().Value;
+
+            return new AmazonS3Client(
+                new BasicAWSCredentials(r2.AccessKeyId, r2.SecretAccessKey),
+                new AmazonS3Config
+                {
+                    ServiceURL = r2.ServiceUrl,
+                    AuthenticationRegion = "auto",
+                    ForcePathStyle = true,
+                    RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+                    ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED,
+                });
+        });
     }
 
     private static void AddJwtAuthentication(this IServiceCollection services)

@@ -1,3 +1,8 @@
+using System.Net;
+
+using Amazon.S3;
+using Amazon.S3.Model;
+
 using Microsoft.Extensions.DependencyInjection;
 
 using UP.Infrastructure.Persistence;
@@ -33,6 +38,22 @@ public abstract class IntegrationTest(ApiFactory factory) : IAsyncLifetime
     {
         await using AsyncServiceScope scope = Factory.Services.CreateAsyncScope();
         return await query(scope.ServiceProvider.GetRequiredService<AppDbContext>());
+    }
+
+    protected async Task<StoredFile?> ReadStoredFileAsync(string key)
+    {
+        try
+        {
+            using GetObjectResponse stored = await Factory.Services.GetRequiredService<IAmazonS3>()
+                .GetObjectAsync(ApiFactory.ImagesBucket, key, CancellationToken);
+            using var content = new MemoryStream();
+            await stored.ResponseStream.CopyToAsync(content, CancellationToken);
+            return new StoredFile(content.ToArray(), stored.Headers.ContentType);
+        }
+        catch (AmazonS3Exception exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
     }
 
     private HttpClient Track(HttpClient client)
