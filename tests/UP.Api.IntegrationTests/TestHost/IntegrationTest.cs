@@ -56,6 +56,14 @@ public abstract class IntegrationTest(ApiFactory factory) : IAsyncLifetime
         }
     }
 
+    protected async Task<int> CountStoredFilesAsync(string keyPrefix)
+    {
+        ListObjectsV2Response listing = await Factory.Services.GetRequiredService<IAmazonS3>().ListObjectsV2Async(
+            new ListObjectsV2Request { BucketName = ApiFactory.ImagesBucket, Prefix = keyPrefix },
+            CancellationToken);
+        return listing.S3Objects?.Count ?? 0;
+    }
+
     private HttpClient Track(HttpClient client)
     {
         _clients.Add(client);

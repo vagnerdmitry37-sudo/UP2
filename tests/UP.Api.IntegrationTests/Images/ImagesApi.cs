@@ -3,6 +3,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using SkiaSharp;
+
 using UP.Api.Images;
 using UP.Domain.Images;
 
@@ -29,16 +31,53 @@ internal static class ImagesApi
             SortOrder = sortOrder,
         };
 
-    public static (byte[] Content, string ContentType) NewFile(
-        string contentType = "image/jpeg",
-        int length = 1024) =>
-        ([.. Enumerable.Range(0, length).Select(index => (byte)index)], contentType);
+    public static readonly byte[] TinyGif = Convert.FromBase64String("R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==");
+
+    private static readonly byte[] ExifTurnedRightSegment =
+    [
+        0xFF, 0xE1, 0x00, 0x22,
+        (byte)'E', (byte)'x', (byte)'i', (byte)'f', 0x00, 0x00,
+        (byte)'M', (byte)'M', 0x00, 0x2A, 0x00, 0x00, 0x00, 0x08,
+        0x00, 0x01,
+        0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00,
+    ];
+
+    public static byte[] NewPhoto(
+        int width = 400,
+        int height = 300,
+        SKEncodedImageFormat format = SKEncodedImageFormat.Jpeg)
+    {
+        using var bitmap = new SKBitmap(width, height);
+        using (var canvas = new SKCanvas(bitmap))
+        {
+            canvas.Clear(SKColors.Red);
+            using var blue = new SKPaint { Color = SKColors.Blue };
+            canvas.DrawRect(width / 2f, 0, width / 2f, height, blue);
+        }
+
+        using SKData encoded = bitmap.Encode(format, 90);
+        return encoded.ToArray();
+    }
+
+    public static byte[] NewPhoneTurnedRightPhoto(int width = 400, int height = 300)
+    {
+        byte[] jpeg = NewPhoto(width, height);
+        return [.. jpeg[..2], .. ExifTurnedRightSegment, .. jpeg[2..]];
+    }
+
+    public static SKBitmap DecodeWebp(byte[] content)
+    {
+        using var codec = SKCodec.Create(new MemoryStream(content));
+        codec.EncodedFormat.ShouldBe(SKEncodedImageFormat.Webp);
+        return SKBitmap.Decode(codec);
+    }
 
     public static async Task<HttpResponseMessage> CreateImagesAsync(
         this HttpClient client,
         string? accessToken,
         Guid entityId,
-        params (byte[] Content, string ContentType)[] files)
+        params byte[][] files)
     {
         using var form = new MultipartFormDataContent
         {
@@ -46,11 +85,11 @@ internal static class ImagesApi
             { new StringContent(entityId.ToString()), "entityId" },
         };
 
-        foreach ((byte[] content, string contentType) in files)
+        foreach (byte[] content in files)
         {
             var file = new ByteArrayContent(content);
-            file.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-            form.Add(file, "files", "photo");
+            file.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+            form.Add(file, "files", "photo.jpg");
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, ImagesRoute) { Content = form };

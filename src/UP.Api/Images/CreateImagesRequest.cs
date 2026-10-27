@@ -17,8 +17,6 @@ public sealed record CreateImagesRequest(
     public const long MaxFileBytes = 10 * 1024 * 1024;
     public const long MaxRequestBytes = (MaxFiles * MaxFileBytes) + (1024 * 1024);
 
-    private static readonly string[] AllowedContentTypes = ["image/jpeg", "image/png", "image/webp"];
-
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         foreach (IFormFile file in Files)
@@ -27,13 +25,6 @@ public sealed record CreateImagesRequest(
             {
                 yield return new ValidationResult(
                     $"File '{file.FileName}' is larger than 10 MB.",
-                    [nameof(Files)]);
-            }
-
-            if (!AllowedContentTypes.Contains(file.ContentType))
-            {
-                yield return new ValidationResult(
-                    $"File '{file.FileName}' must be a JPEG, PNG or WebP image.",
                     [nameof(Files)]);
             }
         }

@@ -30,14 +30,26 @@ public sealed class ImagesController(IImageService imageService) : ControllerBas
         CreateImagesResult result = await imageService.CreateAsync(
             request.EntityType,
             request.EntityId,
-            [.. request.Files.Select(file => new ImageUpload(file.OpenReadStream(), file.ContentType))],
+            [.. request.Files.Select(file => file.OpenReadStream())],
             cancellationToken);
 
-        return result.EntityExists
-            ? (ActionResult<IReadOnlyList<ImageResponse>>)StatusCode(StatusCodes.Status201Created, result.Created.ToResponses())
-            : (ActionResult<IReadOnlyList<ImageResponse>>)Problem(
+        if (!result.EntityExists)
+        {
+            return Problem(
                 statusCode: StatusCodes.Status404NotFound,
                 detail: $"{request.EntityType} not found: {request.EntityId}");
+        }
+
+        foreach (int index in result.InvalidFileIndexes)
+        {
+            ModelState.AddModelError(
+                nameof(request.Files),
+                $"File '{request.Files[index].FileName}' is not a valid JPEG, PNG or WebP image.");
+        }
+
+        return ModelState.IsValid
+            ? StatusCode(StatusCodes.Status201Created, result.Created.ToResponses())
+            : ValidationProblem(ModelState);
     }
 
     [HttpGet]

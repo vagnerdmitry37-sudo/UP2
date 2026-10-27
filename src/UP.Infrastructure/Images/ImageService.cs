@@ -12,17 +12,41 @@ namespace UP.Infrastructure.Images;
 
 internal sealed class ImageService(AppDbContext dbContext, IAmazonS3 s3, IOptions<R2Options> options) : IImageService
 {
+    private const string WebpContentType = "image/webp";
+
     private readonly R2Options _r2 = options.Value;
 
     public async Task<CreateImagesResult> CreateAsync(
         ImageEntityType entityType,
         Guid entityId,
-        IReadOnlyList<ImageUpload> uploads,
+        IReadOnlyList<Stream> files,
         CancellationToken cancellationToken)
     {
         if (!await EntityExistsAsync(entityType, entityId, cancellationToken))
         {
-            return new CreateImagesResult(false, []);
+            return new CreateImagesResult(false, [], []);
+        }
+
+        List<byte[]> webpFiles = [];
+        List<int> invalidFileIndexes = [];
+
+        for (int index = 0; index < files.Count; index++)
+        {
+            byte[]? webpFile = ImageEncoder.TryEncodeAsWebp(files[index]);
+
+            if (webpFile is null)
+            {
+                invalidFileIndexes.Add(index);
+            }
+            else
+            {
+                webpFiles.Add(webpFile);
+            }
+        }
+
+        if (invalidFileIndexes.Count > 0)
+        {
+            return new CreateImagesResult(true, invalidFileIndexes, []);
         }
 
         int lastSortOrder = await dbContext.Images
@@ -31,7 +55,7 @@ internal sealed class ImageService(AppDbContext dbContext, IAmazonS3 s3, IOption
 
         List<Image> images = [];
 
-        foreach (ImageUpload upload in uploads)
+        foreach (byte[] webpFile in webpFiles)
         {
             Guid imageId = Guid.CreateVersion7();
             var image = new Image
@@ -39,17 +63,18 @@ internal sealed class ImageService(AppDbContext dbContext, IAmazonS3 s3, IOption
                 Id = imageId,
                 EntityType = entityType,
                 EntityId = entityId,
-                Key = $"{entityType}/{entityId}/{imageId}",
+                Key = $"{entityType}/{entityId}/{imageId}.webp",
                 SortOrder = lastSortOrder + images.Count + 1,
             };
 
+            using var content = new MemoryStream(webpFile);
             await s3.PutObjectAsync(
                 new PutObjectRequest
                 {
                     BucketName = _r2.Bucket,
                     Key = image.Key,
-                    InputStream = upload.Content,
-                    ContentType = upload.ContentType,
+                    InputStream = content,
+                    ContentType = WebpContentType,
                     UseChunkEncoding = false,
                 },
                 cancellationToken);
@@ -60,7 +85,7 @@ internal sealed class ImageService(AppDbContext dbContext, IAmazonS3 s3, IOption
         dbContext.Images.AddRange(images);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new CreateImagesResult(true, [.. images.Select(ToPublicImage)]);
+        return new CreateImagesResult(true, [], [.. images.Select(ToPublicImage)]);
     }
 
     public async Task<IReadOnlyList<PublicImage>> GetAllAsync(
