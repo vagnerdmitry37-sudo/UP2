@@ -632,6 +632,88 @@
         }
       }
     },
+    "/api/images": {
+      "get": {
+        "tags": [
+          "Images"
+        ],
+        "parameters": [
+          {
+            "name": "entityType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ImageEntityType"
+            }
+          },
+          {
+            "name": "entityIds",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maxItems": 100,
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ImageResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/history-records": {
       "get": {
         "tags": [
@@ -1109,6 +1191,41 @@
           }
         }
       },
+      "ImageEntityType": {
+        "enum": [
+          "Product"
+        ]
+      },
+      "ImageResponse": {
+        "required": [
+          "id",
+          "entityType",
+          "entityId",
+          "sortOrder",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityType": {
+            "$ref": "#/components/schemas/ImageEntityType"
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sortOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
       "JsonElement": { },
       "LoginRequest": {
         "required": [
@@ -1366,6 +1483,9 @@
     },
     {
       "name": "Products"
+    },
+    {
+      "name": "Images"
     },
     {
       "name": "HistoryRecords"

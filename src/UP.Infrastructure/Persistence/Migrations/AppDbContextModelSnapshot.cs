@@ -187,6 +187,37 @@ namespace UP.Infrastructure.Persistence.Migrations
                     b.ToTable("HistoryRecords", (string)null);
                 });
 
+            modelBuilder.Entity("UP.Domain.Images.Image", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Key")
+                        .IsUnique();
+
+                    b.HasIndex("EntityType", "EntityId", "SortOrder");
+
+                    b.ToTable("Images", (string)null);
+                });
+
             modelBuilder.Entity("UP.Domain.Orders.Order", b =>
                 {
                     b.Property<Guid>("Id")

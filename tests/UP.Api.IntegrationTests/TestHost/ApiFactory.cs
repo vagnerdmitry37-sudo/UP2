@@ -17,6 +17,7 @@ namespace UP.Api.IntegrationTests.TestHost;
 public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string JwtKey = "integration-tests-signing-key-not-a-secret-0123456789";
+    public const string ImagesPublicBaseUrl = "https://images.example.test";
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
@@ -73,5 +74,6 @@ public sealed class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.UseEnvironment("Testing");
         builder.UseSetting("Options:Database:ConnectionString", _postgres.GetConnectionString());
         builder.UseSetting("Options:Jwt:Key", JwtKey);
+        builder.UseSetting("Options:R2:PublicBaseUrl", ImagesPublicBaseUrl);
     }
 }
