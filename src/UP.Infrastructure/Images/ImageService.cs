@@ -121,29 +121,44 @@ internal sealed class ImageService(
             return missingIds;
         }
 
-        dbContext.Images.RemoveRange(images);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        await DeleteFilesAsync([.. images.Select(image => image.Key)], cancellationToken);
+        await RemoveWithFilesAsync(images, cancellationToken);
 
         return [];
     }
 
-    private async Task DeleteFilesAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken)
+    public async Task DeleteAllAsync(
+        ImageEntityType entityType,
+        IReadOnlyList<Guid> entityIds,
+        CancellationToken cancellationToken)
     {
+        List<Image> images = await dbContext.Images
+            .Where(image => image.EntityType == entityType && entityIds.Contains(image.EntityId))
+            .ToListAsync(cancellationToken);
+
+        if (images.Count > 0)
+        {
+            await RemoveWithFilesAsync(images, cancellationToken);
+        }
+    }
+
+    private async Task RemoveWithFilesAsync(List<Image> images, CancellationToken cancellationToken)
+    {
+        dbContext.Images.RemoveRange(images);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
         try
         {
             await s3.DeleteObjectsAsync(
                 new DeleteObjectsRequest
                 {
                     BucketName = _r2.Bucket,
-                    Objects = [.. keys.Select(key => new KeyVersion { Key = key })],
+                    Objects = [.. images.Select(image => new KeyVersion { Key = image.Key })],
                 },
                 cancellationToken);
         }
         catch (AmazonServiceException exception)
         {
-            logger.LogImageFilesNotDeleted(exception, keys.Count);
+            logger.LogImageFilesNotDeleted(exception, images.Count);
         }
     }
 

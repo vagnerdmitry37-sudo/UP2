@@ -3,7 +3,9 @@ using System.Net;
 using Microsoft.EntityFrameworkCore;
 
 using UP.Api.Auth;
+using UP.Api.Images;
 using UP.Api.IntegrationTests.Auth;
+using UP.Api.IntegrationTests.Images;
 using UP.Api.IntegrationTests.TestHost;
 using UP.Api.Products;
 
@@ -39,6 +41,25 @@ public sealed class DeleteProductTests(ApiFactory factory) : IntegrationTest(fac
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
         (await SavedIdsAsync()).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Deleting_a_product_deletes_its_images_and_files()
+    {
+        string accessToken = await SignInAsync();
+        List<ProductResponse> created = await CreateProductsAsync(accessToken, 2);
+        Guid deletedId = created[0].Id;
+        Guid keptId = created[1].Id;
+        await Client.CreateImagesAsync(accessToken, deletedId, ImagesApi.NewPhoto(40, 30), ImagesApi.NewPhoto(40, 30));
+        await Client.CreateImagesAsync(accessToken, keptId, ImagesApi.NewPhoto(40, 30));
+
+        HttpResponseMessage response = await Client.DeleteProductsAsync(accessToken, deletedId);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        List<ImageResponse> images = await (await Client.GetImagesAsync("Product", deletedId, keptId)).ReadImagesAsync();
+        images.ShouldHaveSingleItem().EntityId.ShouldBe(keptId);
+        (await CountStoredFilesAsync($"Product/{deletedId}/")).ShouldBe(0);
+        (await CountStoredFilesAsync($"Product/{keptId}/")).ShouldBe(1);
     }
 
     [Fact]

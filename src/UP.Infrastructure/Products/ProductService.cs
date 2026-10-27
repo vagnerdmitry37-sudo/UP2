@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 
+using UP.Application.Images;
 using UP.Application.Products;
+using UP.Domain.Images;
 using UP.Domain.Products;
 using UP.Infrastructure.Persistence;
 
 namespace UP.Infrastructure.Products;
 
-internal sealed class ProductService(AppDbContext dbContext) : IProductService
+internal sealed class ProductService(AppDbContext dbContext, IImageService imageService) : IProductService
 {
     private const string LikeEscape = @"\";
 
@@ -100,6 +102,8 @@ internal sealed class ProductService(AppDbContext dbContext) : IProductService
 
         dbContext.Products.RemoveRange(existingProducts);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await imageService.DeleteAllAsync(ImageEntityType.Product, ids, cancellationToken);
 
         return [];
     }
