@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 using UP.Application.HistoryRecords;
 using UP.Domain.HistoryRecords;
+using UP.Domain.Orders;
 using UP.Domain.Products;
 
 namespace UP.Infrastructure.HistoryRecords;
@@ -17,7 +18,7 @@ internal sealed class HistoryInterceptor(ICurrentUser currentUser, TimeProvider 
     private const string IdPropertyName = "Id";
     private const string JsonColumnType = "jsonb";
 
-    private static readonly HashSet<Type> TypesWithHistory = [typeof(Product)];
+    private static readonly HashSet<Type> TypesWithHistory = [typeof(Product), typeof(Order)];
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
