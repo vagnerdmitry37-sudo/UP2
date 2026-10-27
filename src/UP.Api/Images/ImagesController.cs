@@ -14,6 +14,7 @@ namespace UP.Api.Images;
 public sealed class ImagesController(IImageService imageService) : ControllerBase
 {
     private const int MaxEntitiesPerRequest = 100;
+    private const int MaxImagesPerRequest = 100;
 
     [HttpPost]
     [Authorize]
@@ -66,5 +67,27 @@ public sealed class ImagesController(IImageService imageService) : ControllerBas
             cancellationToken);
 
         return Ok(images.ToResponses());
+    }
+
+    [HttpDelete]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(
+        [FromQuery, Required, MinLength(1), MaxLength(MaxImagesPerRequest)] Guid[] ids,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Guid> missingIds = await imageService.DeleteAsync([.. ids.Distinct()], cancellationToken);
+
+        if (missingIds.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Images not found: {string.Join(", ", missingIds)}");
+        }
+
+        return NoContent();
     }
 }

@@ -1,7 +1,9 @@
+using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using UP.Application.Images;
@@ -10,7 +12,11 @@ using UP.Infrastructure.Persistence;
 
 namespace UP.Infrastructure.Images;
 
-internal sealed class ImageService(AppDbContext dbContext, IAmazonS3 s3, IOptions<R2Options> options) : IImageService
+internal sealed class ImageService(
+    AppDbContext dbContext,
+    IAmazonS3 s3,
+    IOptions<R2Options> options,
+    ILogger<ImageService> logger) : IImageService
 {
     private const string WebpContentType = "image/webp";
 
@@ -101,6 +107,44 @@ internal sealed class ImageService(AppDbContext dbContext, IAmazonS3 s3, IOption
             .ToListAsync(cancellationToken);
 
         return [.. images.Select(ToPublicImage)];
+    }
+
+    public async Task<IReadOnlyList<Guid>> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
+    {
+        List<Image> images = await dbContext.Images
+            .Where(image => ids.Contains(image.Id))
+            .ToListAsync(cancellationToken);
+        List<Guid> missingIds = [.. ids.Except(images.Select(image => image.Id))];
+
+        if (missingIds.Count > 0)
+        {
+            return missingIds;
+        }
+
+        dbContext.Images.RemoveRange(images);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await DeleteFilesAsync([.. images.Select(image => image.Key)], cancellationToken);
+
+        return [];
+    }
+
+    private async Task DeleteFilesAsync(IReadOnlyList<string> keys, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await s3.DeleteObjectsAsync(
+                new DeleteObjectsRequest
+                {
+                    BucketName = _r2.Bucket,
+                    Objects = [.. keys.Select(key => new KeyVersion { Key = key })],
+                },
+                cancellationToken);
+        }
+        catch (AmazonServiceException exception)
+        {
+            logger.LogImageFilesNotDeleted(exception, keys.Count);
+        }
     }
 
     private Task<bool> EntityExistsAsync(

@@ -14,4 +14,6 @@ public interface IImageService
         ImageEntityType entityType,
         IReadOnlyList<Guid> entityIds,
         CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Guid>> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
 }

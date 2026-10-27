@@ -102,6 +102,23 @@ internal static class ImagesApi
         return await client.SendAsync(request, CancellationToken);
     }
 
+    public static async Task<HttpResponseMessage> DeleteImagesAsync(
+        this HttpClient client,
+        string? accessToken,
+        params Guid[] ids)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"{ImagesRoute}?{string.Join("&", ids.Select(id => $"ids={id}"))}");
+
+        if (accessToken is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return await client.SendAsync(request, CancellationToken);
+    }
+
     public static Task<HttpResponseMessage> GetImagesAsync(
         this HttpClient client,
         string entityType,
