@@ -69,6 +69,32 @@ public sealed class ImagesController(IImageService imageService) : ControllerBas
         return Ok(images.ToResponses());
     }
 
+    [HttpPut(ImageRoutes.Order)]
+    [Authorize]
+    [ProducesResponseType<IReadOnlyList<ImageResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<IReadOnlyList<ImageResponse>>> UpdateOrder(
+        UpdateImageOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        UpdateImageOrderResult result = await imageService.UpdateOrderAsync(
+            request.EntityType,
+            request.EntityId,
+            request.ImageIds,
+            cancellationToken);
+
+        if (!result.ListsEveryImage)
+        {
+            ModelState.AddModelError(
+                nameof(request.ImageIds),
+                $"The list must contain every image of {request.EntityType} {request.EntityId} exactly once.");
+            return ValidationProblem(ModelState);
+        }
+
+        return Ok(result.Images.ToResponses());
+    }
+
     [HttpDelete]
     [Authorize]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -81,13 +107,10 @@ public sealed class ImagesController(IImageService imageService) : ControllerBas
     {
         IReadOnlyList<Guid> missingIds = await imageService.DeleteAsync([.. ids.Distinct()], cancellationToken);
 
-        if (missingIds.Count > 0)
-        {
-            return Problem(
+        return missingIds.Count > 0
+            ? Problem(
                 statusCode: StatusCodes.Status404NotFound,
-                detail: $"Images not found: {string.Join(", ", missingIds)}");
-        }
-
-        return NoContent();
+                detail: $"Images not found: {string.Join(", ", missingIds)}")
+            : NoContent();
     }
 }

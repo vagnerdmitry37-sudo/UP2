@@ -109,6 +109,31 @@ internal sealed class ImageService(
         return [.. images.Select(ToPublicImage)];
     }
 
+    public async Task<UpdateImageOrderResult> UpdateOrderAsync(
+        ImageEntityType entityType,
+        Guid entityId,
+        IReadOnlyList<Guid> imageIds,
+        CancellationToken cancellationToken)
+    {
+        List<Image> images = await dbContext.Images
+            .Where(image => image.EntityType == entityType && image.EntityId == entityId)
+            .ToListAsync(cancellationToken);
+
+        if (images.Count != imageIds.Count || !images.All(image => imageIds.Contains(image.Id)))
+        {
+            return new UpdateImageOrderResult(false, []);
+        }
+
+        for (int position = 0; position < imageIds.Count; position++)
+        {
+            images.First(image => image.Id == imageIds[position]).SortOrder = position;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new UpdateImageOrderResult(true, [.. images.OrderBy(image => image.SortOrder).Select(ToPublicImage)]);
+    }
+
     public async Task<IReadOnlyList<Guid>> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken)
     {
         List<Image> images = await dbContext.Images

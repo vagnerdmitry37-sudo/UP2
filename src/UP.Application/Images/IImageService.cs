@@ -15,6 +15,12 @@ public interface IImageService
         IReadOnlyList<Guid> entityIds,
         CancellationToken cancellationToken);
 
+    Task<UpdateImageOrderResult> UpdateOrderAsync(
+        ImageEntityType entityType,
+        Guid entityId,
+        IReadOnlyList<Guid> imageIds,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlyList<Guid>> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
 
     Task DeleteAllAsync(
