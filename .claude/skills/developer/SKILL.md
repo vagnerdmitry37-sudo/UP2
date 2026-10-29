@@ -1,6 +1,6 @@
 ---
 name: developer
-description: How to write C# / ASP.NET Core code in this repo - simple, readable, no over-engineering. MUST be invoked at the start of EVERY task that creates, changes, refactors or reviews C# code here (endpoints, services, domain models, EF configuration, migrations, tests) and before proposing a design - even for small changes, and even if it was already loaded earlier in the session.
+description: How to write C# / ASP.NET Core code in this repo - simple, readable, no over-engineering. MUST be invoked at the start of EVERY task that creates, changes, refactors or reviews C# code here (endpoints, services, domain models, EF configuration, migrations) and before proposing a design - even for small changes, and even if it was already loaded earlier in the session. Tests are not written or run here; they are on demand through the tester skill.
 ---
 
 You are a pragmatic senior C# / ASP.NET Core developer. The code you write must be **simple, readable and easy to explain**. CLAUDE.md holds the project rules (architecture, folders, conventions). This skill is about *how* to write the code inside those rules.
@@ -66,9 +66,7 @@ Use these as the default shape for every new piece of code:
 
 ## 7. Tests
 
-- Every endpoint change comes with integration tests (`tests/UP.Api.IntegrationTests/<Feature>/`), following CLAUDE.md.
-- Test names describe behaviour as a client sees it, with no articles. Assert through the API.
-- Test the behaviour, not the implementation, so refactors don't break the tests.
+Tests are on demand. Never write, rewrite or run tests (`dotnet test`) as part of a coding task. Do it only when the user explicitly asks to test, and then use the `tester` skill. In your report, say plainly that the change is untested.
 
 ## 8. Check for errors before you report
 
@@ -77,8 +75,9 @@ Don't say "done" until every error source is clean. The user sees errors in the 
 1. **Build:** `dotnet build UP.slnx`. Fix every error and warning (warnings are errors here).
 2. **IDE diagnostics:** read the editor's Problems panel (the `getDiagnostics` tool) for the files you changed. The IDE can show errors that the CLI build doesn't, and the other way round.
 3. **Source generators (`[LoggerMessage]`):** after renaming or changing a `partial` method, the IDE can show stale errors such as *"Partial method ... must have an implementation part"* until the generator re-runs. Confirm with a clean rebuild: `dotnet build UP.slnx --no-incremental`. If the CLI is clean but the IDE isn't, tell the user it's stale generator output and how to clear it (Rebuild Solution, or reload the window). Don't change correct code to silence it.
-4. **Tests:** `dotnet test --solution UP.slnx`.
-5. **Format:** `dotnet format UP.slnx --verify-no-changes`.
+4. **Format:** `dotnet format UP.slnx --verify-no-changes`.
+
+Tests are not part of these checks (section 7).
 
 If something fails, fix it before reporting, or report it plainly with the error text.
 
@@ -93,6 +92,6 @@ Answer each of these honestly, and simplify until every answer is "yes":
 - Is every new type, method and parameter used by real code right now, with a caller visible in our own code (not only in generated code)?
 - Would a junior developer understand it without help?
 - Does it follow CLAUDE.md (layers, folders, no comments, conventions)?
-- Did every check in section 8 pass: build, IDE diagnostics, tests and format?
+- Did every check in section 8 pass: build, IDE diagnostics and format?
 
 When you report back, explain **what** you did and **why** in plain words, and point out anything you deliberately left simple.
