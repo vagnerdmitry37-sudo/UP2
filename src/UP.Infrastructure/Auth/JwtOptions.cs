@@ -14,7 +14,7 @@ public sealed class JwtOptions
 
     public string Audience { get; init; } = string.Empty;
 
-    public int AccessTokenLifetimeMinutes { get; init; } = 15;
+    public int AccessTokenLifetimeSeconds { get; init; } = 900;
 
     internal SymmetricSecurityKey CreateSigningKey() => new(Encoding.UTF8.GetBytes(Key));
 }

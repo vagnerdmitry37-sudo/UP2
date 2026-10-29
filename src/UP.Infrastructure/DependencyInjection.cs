@@ -150,8 +150,8 @@ public static class DependencyInjection
                 !string.IsNullOrWhiteSpace(options.Audience),
                 "JWT audience must be configured.")
             .Validate(options =>
-                options.AccessTokenLifetimeMinutes is >= 1 and <= 60,
-                "JWT access token lifetime must be between 1 and 60 minutes.")
+                options.AccessTokenLifetimeSeconds is >= 1 and <= 3600,
+                "JWT access token lifetime must be between 1 and 3600 seconds.")
             .ValidateOnStart();
 
         services.AddOptions<RefreshTokenOptions>()

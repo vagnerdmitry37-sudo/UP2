@@ -17,7 +17,7 @@ internal sealed class JwtAccessTokenGenerator(IOptions<JwtOptions> options, Time
     public AccessToken Generate(Guid userId, string email, IReadOnlyCollection<string> roles)
     {
         DateTimeOffset now = timeProvider.GetUtcNow();
-        DateTimeOffset expiresAt = now.AddMinutes(_options.AccessTokenLifetimeMinutes);
+        DateTimeOffset expiresAt = now.AddSeconds(_options.AccessTokenLifetimeSeconds);
 
         List<Claim> claims =
         [
