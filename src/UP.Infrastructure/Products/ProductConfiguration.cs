@@ -9,7 +9,7 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 {
     private const int TypeMaxLength = 50;
     private const int NameMaxLength = 200;
-    private const int SeoDescriptionMaxLength = 20000;
+    private const int SeoDescriptionMaxLength = 160;
     private const int ShortDescriptionMaxLength = 200;
     private const int DescriptionMaxLength = 20000;
     private const int PricePrecision = 18;

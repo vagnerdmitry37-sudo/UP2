@@ -290,8 +290,8 @@ namespace UP.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("SeoDescription")
                         .IsRequired()
-                        .HasMaxLength(20000)
-                        .HasColumnType("character varying(20000)");
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
 
                     b.Property<string>("ShortDescription")
                         .IsRequired()

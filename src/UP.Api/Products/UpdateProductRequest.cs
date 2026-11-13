@@ -10,7 +10,7 @@ public sealed record UpdateProductRequest(
     Guid Id,
     [EnumDataType(typeof(ProductType))] ProductType Type,
     [Required, MaxLength(200)] string Name,
-    [property: RichText][Required, MaxLength(20000)] string SeoDescription,
+    [Required, MaxLength(160)] string SeoDescription,
     [Range(0d, double.MaxValue)] decimal Price,
     JsonElement Attributes,
     [Required(AllowEmptyStrings = true), MaxLength(200)] string ShortDescription = "",

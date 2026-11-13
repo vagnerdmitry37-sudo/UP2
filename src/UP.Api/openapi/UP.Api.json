@@ -1436,8 +1436,7 @@
             "type": "string"
           },
           "seoDescription": {
-            "type": "string",
-            "format": "html"
+            "type": "string"
           },
           "price": {
             "type": "number",
@@ -1748,8 +1747,7 @@
             "type": "string"
           },
           "seoDescription": {
-            "type": "string",
-            "format": "html"
+            "type": "string"
           },
           "price": {
             "type": "number",
