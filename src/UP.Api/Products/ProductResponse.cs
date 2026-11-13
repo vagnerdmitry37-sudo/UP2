@@ -10,5 +10,6 @@ public sealed record ProductResponse(
     string Name,
     string SeoDescription,
     string ShortDescription,
+    string Description,
     decimal Price,
     JsonElement Attributes);

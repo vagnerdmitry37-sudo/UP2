@@ -12,6 +12,8 @@ public sealed class Product
 
     public string ShortDescription { get; set; } = string.Empty;
 
+    public string Description { get; set; } = string.Empty;
+
     public decimal Price { get; set; }
 
     public string Attributes { get; set; } = "{}";

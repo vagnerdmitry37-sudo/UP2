@@ -1436,7 +1436,8 @@
             "type": "string"
           },
           "seoDescription": {
-            "type": "string"
+            "type": "string",
+            "format": "html"
           },
           "price": {
             "type": "number",
@@ -1447,6 +1448,11 @@
           },
           "shortDescription": {
             "type": "string",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "format": "html",
             "default": ""
           }
         }
@@ -1614,6 +1620,7 @@
           "name",
           "seoDescription",
           "shortDescription",
+          "description",
           "price",
           "attributes"
         ],
@@ -1633,6 +1640,9 @@
             "type": "string"
           },
           "shortDescription": {
+            "type": "string"
+          },
+          "description": {
             "type": "string"
           },
           "price": {
@@ -1738,7 +1748,8 @@
             "type": "string"
           },
           "seoDescription": {
-            "type": "string"
+            "type": "string",
+            "format": "html"
           },
           "price": {
             "type": "number",
@@ -1749,6 +1760,11 @@
           },
           "shortDescription": {
             "type": "string",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "format": "html",
             "default": ""
           }
         }

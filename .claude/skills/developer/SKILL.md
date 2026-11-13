@@ -76,6 +76,10 @@ Don't say "done" until every error source is clean. The user sees errors in the 
 2. **IDE diagnostics:** read the editor's Problems panel (the `getDiagnostics` tool) for the files you changed. The IDE can show errors that the CLI build doesn't, and the other way round.
 3. **Source generators (`[LoggerMessage]`):** after renaming or changing a `partial` method, the IDE can show stale errors such as *"Partial method ... must have an implementation part"* until the generator re-runs. Confirm with a clean rebuild: `dotnet build UP.slnx --no-incremental`. If the CLI is clean but the IDE isn't, tell the user it's stale generator output and how to clear it (Rebuild Solution, or reload the window). Don't change correct code to silence it.
 4. **Format:** `dotnet format UP.slnx --verify-no-changes`.
+5. **Database (when the task changed the EF model or added a migration):** always apply it to the local dev database before reporting. Don't leave it for the user.
+   - A running `UP.Api` locks `bin/Debug`. Stop it first (`Stop-Process -Name UP.Api`) and say so in the report; the user restarts it.
+   - Build, then run `dotnet ef database update --project src/UP.Infrastructure --startup-project src/UP.Api --no-build`.
+   - Confirm with `dotnet ef migrations list ... --no-build` (nothing marked `(Pending)`) and `dotnet ef migrations has-pending-model-changes ... --no-build` ("No changes"). Use `--no-build` only right after a Debug build: an older build in another configuration gives a stale answer.
 
 Tests are not part of these checks (section 7).
 
@@ -92,6 +96,6 @@ Answer each of these honestly, and simplify until every answer is "yes":
 - Is every new type, method and parameter used by real code right now, with a caller visible in our own code (not only in generated code)?
 - Would a junior developer understand it without help?
 - Does it follow CLAUDE.md (layers, folders, no comments, conventions)?
-- Did every check in section 8 pass: build, IDE diagnostics and format?
+- Did every check in section 8 pass: build, IDE diagnostics, format and, if the model changed, the database update?
 
 When you report back, explain **what** you did and **why** in plain words, and point out anything you deliberately left simple.
