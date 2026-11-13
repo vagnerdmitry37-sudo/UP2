@@ -1444,6 +1444,10 @@
           },
           "attributes": {
             "$ref": "#/components/schemas/JsonElement"
+          },
+          "shortDescription": {
+            "type": "string",
+            "default": ""
           }
         }
       },
@@ -1609,6 +1613,7 @@
           "type",
           "name",
           "description",
+          "shortDescription",
           "price",
           "attributes"
         ],
@@ -1625,6 +1630,9 @@
             "type": "string"
           },
           "description": {
+            "type": "string"
+          },
+          "shortDescription": {
             "type": "string"
           },
           "price": {
@@ -1738,6 +1746,10 @@
           },
           "attributes": {
             "$ref": "#/components/schemas/JsonElement"
+          },
+          "shortDescription": {
+            "type": "string",
+            "default": ""
           }
         }
       },

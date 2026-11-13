@@ -9,5 +9,6 @@ public sealed record ProductResponse(
     ProductType Type,
     string Name,
     string Description,
+    string ShortDescription,
     decimal Price,
     JsonElement Attributes);

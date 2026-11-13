@@ -10,6 +10,7 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
     private const int TypeMaxLength = 50;
     private const int NameMaxLength = 200;
     private const int DescriptionMaxLength = 5000;
+    private const int ShortDescriptionMaxLength = 200;
     private const int PricePrecision = 18;
     private const int PriceScale = 2;
 
@@ -31,6 +32,10 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
 
         builder.Property(product => product.Description)
             .HasMaxLength(DescriptionMaxLength)
+            .IsRequired();
+
+        builder.Property(product => product.ShortDescription)
+            .HasMaxLength(ShortDescriptionMaxLength)
             .IsRequired();
 
         builder.Property(product => product.Price)

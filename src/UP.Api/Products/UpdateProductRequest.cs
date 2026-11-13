@@ -11,4 +11,5 @@ public sealed record UpdateProductRequest(
     [Required, MaxLength(200)] string Name,
     [Required, MaxLength(5000)] string Description,
     [Range(0d, double.MaxValue)] decimal Price,
-    JsonElement Attributes);
+    JsonElement Attributes,
+    [Required(AllowEmptyStrings = true), MaxLength(200)] string ShortDescription = "");
