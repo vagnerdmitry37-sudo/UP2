@@ -27,7 +27,7 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
         product.Id.ShouldNotBe(Guid.Empty);
         product.Type.ShouldBe(ProductType.Excursion);
         product.Name.ShouldBe("Old Town Walk");
-        product.Description.ShouldBe("Three hours through the historic centre");
+        product.SeoDescription.ShouldBe("Three hours through the historic centre");
         product.Price.ShouldBe(25.50m);
         product.Attributes.GetProperty("durationMinutes").GetInt32().ShouldBe(180);
         product.Attributes.GetProperty("meetingPoint").GetString().ShouldBe("Main square");
@@ -135,7 +135,7 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
             {
                 type = "Excursion",
                 name = "Old Town Walk",
-                description = "Three hours through the historic centre",
+                seoDescription = "Three hours through the historic centre",
                 price = "25.50",
                 attributes = new { durationMinutes = 180 },
             });

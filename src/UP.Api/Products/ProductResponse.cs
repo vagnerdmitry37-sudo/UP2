@@ -8,7 +8,7 @@ public sealed record ProductResponse(
     Guid Id,
     ProductType Type,
     string Name,
-    string Description,
+    string SeoDescription,
     string ShortDescription,
     decimal Price,
     JsonElement Attributes);

@@ -1423,7 +1423,7 @@
         "required": [
           "type",
           "name",
-          "description",
+          "seoDescription",
           "price",
           "attributes"
         ],
@@ -1435,7 +1435,7 @@
           "name": {
             "type": "string"
           },
-          "description": {
+          "seoDescription": {
             "type": "string"
           },
           "price": {
@@ -1612,7 +1612,7 @@
           "id",
           "type",
           "name",
-          "description",
+          "seoDescription",
           "shortDescription",
           "price",
           "attributes"
@@ -1629,7 +1629,7 @@
           "name": {
             "type": "string"
           },
-          "description": {
+          "seoDescription": {
             "type": "string"
           },
           "shortDescription": {
@@ -1721,7 +1721,7 @@
           "id",
           "type",
           "name",
-          "description",
+          "seoDescription",
           "price",
           "attributes"
         ],
@@ -1737,7 +1737,7 @@
           "name": {
             "type": "string"
           },
-          "description": {
+          "seoDescription": {
             "type": "string"
           },
           "price": {

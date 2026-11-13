@@ -24,13 +24,13 @@ internal static class ProductsApi
         decimal price = 25.50m,
         object? attributes = null,
         Guid? id = null,
-        string description = "Three hours through the historic centre") =>
+        string seoDescription = "Three hours through the historic centre") =>
         new
         {
             id,
             type,
             name,
-            description,
+            seoDescription,
             price,
             attributes = attributes ?? new { durationMinutes = 180, meetingPoint = "Main square" },
         };

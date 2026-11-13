@@ -8,7 +8,7 @@ namespace UP.Api.Products;
 public sealed record CreateProductRequest(
     [EnumDataType(typeof(ProductType))] ProductType Type,
     [Required, MaxLength(200)] string Name,
-    [Required, MaxLength(5000)] string Description,
+    [Required, MaxLength(5000)] string SeoDescription,
     [Range(0d, double.MaxValue)] decimal Price,
     JsonElement Attributes,
     [Required(AllowEmptyStrings = true), MaxLength(200)] string ShortDescription = "");

@@ -36,7 +36,7 @@ internal sealed class ProductService(AppDbContext dbContext, IImageService image
             string pattern = $"%{EscapeLikePattern(query.GlobalFilter.Trim())}%";
             matching = matching.Where(product =>
                 EF.Functions.ILike(product.Name, pattern, LikeEscape)
-                || EF.Functions.ILike(product.Description, pattern, LikeEscape)
+                || EF.Functions.ILike(product.SeoDescription, pattern, LikeEscape)
                 || EF.Functions.ILike(product.ShortDescription, pattern, LikeEscape));
         }
 

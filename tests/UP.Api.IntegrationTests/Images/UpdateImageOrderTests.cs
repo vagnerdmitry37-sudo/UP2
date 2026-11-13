@@ -144,7 +144,7 @@ public sealed class UpdateImageOrderTests(ApiFactory factory) : IntegrationTest(
             Id = Guid.CreateVersion7(),
             Type = ProductType.Excursion,
             Name = "Old Town Walk",
-            Description = "Three hours through the historic centre",
+            SeoDescription = "Three hours through the historic centre",
             Price = 25.50m,
         };
 

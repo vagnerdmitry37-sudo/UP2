@@ -114,14 +114,14 @@ public sealed class GetProductsTests(ApiFactory factory) : IntegrationTest(facto
     }
 
     [Fact]
-    public async Task Global_filter_matches_name_or_description_ignoring_case_and_counts_only_matches()
+    public async Task Global_filter_matches_name_or_seo_description_ignoring_case_and_counts_only_matches()
     {
         string token = await SignInAsync();
         await Client.CreateProductsAsync(
             token,
-            ProductsApi.NewProduct(name: "Old Town Walk", description: "Historic centre"),
-            ProductsApi.NewProduct(name: "Night tour", description: "A walk after dark"),
-            ProductsApi.NewProduct(name: "Airport to hotel", description: "Door to door"));
+            ProductsApi.NewProduct(name: "Old Town Walk", seoDescription: "Historic centre"),
+            ProductsApi.NewProduct(name: "Night tour", seoDescription: "A walk after dark"),
+            ProductsApi.NewProduct(name: "Airport to hotel", seoDescription: "Door to door"));
 
         ProductsPageResponse page = await GetPageAsync("globalFilter=WALK&sortField=name&rows=1");
 
