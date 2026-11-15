@@ -99,7 +99,7 @@ public sealed class DeleteImagesTests(ApiFactory factory) : IntegrationTest(fact
         var product = new Product
         {
             Id = Guid.CreateVersion7(),
-            Type = ProductType.Excursion,
+            Type = ProductType.GroupExcursion,
             Name = "Old Town Walk",
             SeoDescription = "Three hours through the historic centre",
             Price = 25.50m,

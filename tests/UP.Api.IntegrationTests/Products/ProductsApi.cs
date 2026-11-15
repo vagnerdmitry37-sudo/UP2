@@ -22,12 +22,12 @@ internal static class ProductsApi
         new { from, to, maxPassengers };
 
     private static object DefaultAttributes(string type) =>
-        type == "Transfer"
+        type == "IndividualTransfer"
             ? TransferAttributes()
             : new { durationMinutes = 180, meetingPoint = "Main square" };
 
     public static object NewProduct(
-        string type = "Excursion",
+        string type = "GroupExcursion",
         string name = "Old Town Walk",
         decimal price = 25.50m,
         object? attributes = null,

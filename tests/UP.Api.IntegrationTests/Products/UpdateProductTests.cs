@@ -25,7 +25,7 @@ public sealed class UpdateProductTests(ApiFactory factory) : IntegrationTest(fac
             accessToken,
             ProductsApi.NewProduct(
                 id: created.Id,
-                type: "Transfer",
+                type: "IndividualTransfer",
                 name: "Airport to hotel",
                 price: 40m,
                 attributes: ProductsApi.TransferAttributes()));
@@ -33,7 +33,7 @@ public sealed class UpdateProductTests(ApiFactory factory) : IntegrationTest(fac
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         ProductResponse product = (await response.ReadProductsAsync()).ShouldHaveSingleItem();
         product.Id.ShouldBe(created.Id);
-        product.Type.ShouldBe(ProductType.Transfer);
+        product.Type.ShouldBe(ProductType.IndividualTransfer);
         product.Name.ShouldBe("Airport to hotel");
         product.Price.ShouldBe(40m);
         product.Attributes.GetProperty("from").GetString().ShouldBe("Airport");

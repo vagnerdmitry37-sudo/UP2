@@ -37,12 +37,12 @@ public sealed class GetProductsTests(ApiFactory factory) : IntegrationTest(facto
     {
         string token = await SignInAsync();
         await Client.CreateProductsAsync(token, ProductsApi.NewProduct(name: "Old Town Walk"));
-        await Client.CreateProductsAsync(token, ProductsApi.NewProduct(type: "Transfer", name: "Airport to hotel"));
+        await Client.CreateProductsAsync(token, ProductsApi.NewProduct(type: "IndividualTransfer", name: "Airport to hotel"));
 
         ProductsPageResponse page = await GetPageAsync();
 
         page.Items.Select(product => product.Name).ShouldBe(["Old Town Walk", "Airport to hotel"]);
-        page.Items[1].Type.ShouldBe(ProductType.Transfer);
+        page.Items[1].Type.ShouldBe(ProductType.IndividualTransfer);
         page.Items[0].Attributes.GetProperty("durationMinutes").GetInt32().ShouldBe(180);
     }
 

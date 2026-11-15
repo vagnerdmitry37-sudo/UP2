@@ -31,7 +31,7 @@ public sealed class HistoryRecordTests(ApiFactory factory) : IntegrationTest(fac
         record.Operation.ShouldBe(HistoryOperation.Created);
         record.UserId.ShouldBe(await UserIdAsync());
         record.Changes.GetProperty("Name").GetString().ShouldBe("Old Town Walk");
-        record.Changes.GetProperty("Type").GetString().ShouldBe("Excursion");
+        record.Changes.GetProperty("Type").GetString().ShouldBe("GroupExcursion");
         record.Changes.GetProperty("Attributes").GetProperty("durationMinutes").GetInt32().ShouldBe(180);
         record.Changes.TryGetProperty("Id", out _).ShouldBeFalse();
     }

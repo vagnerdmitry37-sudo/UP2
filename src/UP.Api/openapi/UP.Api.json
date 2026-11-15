@@ -1699,6 +1699,7 @@
         "required": [
           "id",
           "type",
+          "typeLabel",
           "name",
           "seoDescription",
           "shortDescription",
@@ -1714,6 +1715,9 @@
           },
           "type": {
             "$ref": "#/components/schemas/ProductType"
+          },
+          "typeLabel": {
+            "type": "string"
           },
           "name": {
             "type": "string"
@@ -1765,13 +1769,16 @@
       },
       "ProductType": {
         "enum": [
-          "Excursion",
-          "Transfer"
+          "GroupExcursion",
+          "IndividualExcursion",
+          "IndividualTransfer",
+          "GroupTransfer"
         ]
       },
       "ProductTypeResponse": {
         "required": [
           "type",
+          "label",
           "priceLabel",
           "attributes"
         ],
@@ -1779,6 +1786,9 @@
         "properties": {
           "type": {
             "$ref": "#/components/schemas/ProductType"
+          },
+          "label": {
+            "type": "string"
           },
           "priceLabel": {
             "type": "string"

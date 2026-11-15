@@ -25,7 +25,7 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
         ProductResponse product = (await response.ReadProductsAsync()).ShouldHaveSingleItem();
         product.Id.ShouldNotBe(Guid.Empty);
-        product.Type.ShouldBe(ProductType.Excursion);
+        product.Type.ShouldBe(ProductType.GroupExcursion);
         product.Name.ShouldBe("Old Town Walk");
         product.SeoDescription.ShouldBe("Three hours through the historic centre");
         product.Price.ShouldBe(25.50m);
@@ -41,7 +41,7 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
         HttpResponseMessage response = await Client.CreateProductsAsync(
             accessToken,
             ProductsApi.NewProduct(name: "Old Town Walk"),
-            ProductsApi.NewProduct(type: "Transfer", name: "Airport to hotel"));
+            ProductsApi.NewProduct(type: "IndividualTransfer", name: "Airport to hotel"));
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
         List<ProductResponse> products = await response.ReadProductsAsync();
@@ -70,10 +70,10 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
 
         HttpResponseMessage response = await Client.CreateProductsAsync(
             accessToken,
-            ProductsApi.NewProduct(type: "Transfer", name: "Airport to hotel", attributes: ProductsApi.TransferAttributes()));
+            ProductsApi.NewProduct(type: "IndividualTransfer", name: "Airport to hotel", attributes: ProductsApi.TransferAttributes()));
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
-        (await response.ReadProductsAsync()).ShouldHaveSingleItem().Type.ShouldBe(ProductType.Transfer);
+        (await response.ReadProductsAsync()).ShouldHaveSingleItem().Type.ShouldBe(ProductType.IndividualTransfer);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
             accessToken,
             new
             {
-                type = "Excursion",
+                type = "GroupExcursion",
                 name = "Old Town Walk",
                 seoDescription = "Three hours through the historic centre",
                 price = "25.50",

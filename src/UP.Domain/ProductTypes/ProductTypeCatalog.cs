@@ -6,23 +6,31 @@ public static class ProductTypeCatalog
 {
     private const int LocationMaxLength = 200;
 
+    private static readonly AttributeDefinition DurationMinutes =
+        new("durationMinutes", "Duration, minutes", AttributeKind.WholeNumber, Required: true, Min: 1);
+
+    private static readonly AttributeDefinition MaxPassengers =
+        new("maxPassengers", "Max passengers", AttributeKind.WholeNumber, Required: true, Min: 1);
+
+    private static readonly AttributeDefinition From =
+        new("from", "Pickup location", AttributeKind.Text, Required: true, MaxLength: LocationMaxLength);
+
+    private static readonly AttributeDefinition To =
+        new("to", "Drop-off location", AttributeKind.Text, Required: true, MaxLength: LocationMaxLength);
+
     public static IReadOnlyList<ProductTypeDefinition> All { get; } =
     [
         new(
-            ProductType.Excursion,
-            "Price",
+            ProductType.GroupExcursion,
+            "Group excursion",
+            "Price per person",
             [
-                new("durationMinutes", "Duration, minutes", AttributeKind.WholeNumber, Required: false, Min: 1),
-                new("meetingPoint", "Meeting point", AttributeKind.Text, Required: false, MaxLength: LocationMaxLength),
+                DurationMinutes,
+                new("meetingPoint", "Meeting point", AttributeKind.Text, Required: true, MaxLength: LocationMaxLength),
             ]),
-        new(
-            ProductType.Transfer,
-            "Price per vehicle",
-            [
-                new("from", "Pickup location", AttributeKind.Text, Required: true, MaxLength: LocationMaxLength),
-                new("to", "Drop-off location", AttributeKind.Text, Required: true, MaxLength: LocationMaxLength),
-                new("maxPassengers", "Max passengers", AttributeKind.WholeNumber, Required: true, Min: 1),
-            ]),
+        new(ProductType.IndividualExcursion, "Individual excursion", "Price per group", [DurationMinutes, MaxPassengers]),
+        new(ProductType.GroupTransfer, "Group transfer", "Price per person", [From, To]),
+        new(ProductType.IndividualTransfer, "Individual transfer", "Price per vehicle", [From, To, MaxPassengers]),
     ];
 
     public static ProductTypeDefinition For(ProductType type) =>
