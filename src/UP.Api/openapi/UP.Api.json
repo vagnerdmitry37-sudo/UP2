@@ -121,6 +121,44 @@
         }
       }
     },
+    "/api/product-types": {
+      "get": {
+        "tags": [
+          "ProductTypes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductTypeResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductTypeResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProductTypeResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/products": {
       "post": {
         "tags": [
@@ -1419,6 +1457,51 @@
           }
         }
       },
+      "AttributeDefinitionResponse": {
+        "required": [
+          "key",
+          "label",
+          "kind",
+          "required",
+          "maxLength",
+          "min"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AttributeKind"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "maxLength": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "min": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "AttributeKind": {
+        "enum": [
+          "Text",
+          "WholeNumber"
+        ]
+      },
       "CreateProductRequest": {
         "required": [
           "type",
@@ -1686,6 +1769,28 @@
           "Transfer"
         ]
       },
+      "ProductTypeResponse": {
+        "required": [
+          "type",
+          "priceLabel",
+          "attributes"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/ProductType"
+          },
+          "priceLabel": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttributeDefinitionResponse"
+            }
+          }
+        }
+      },
       "RegisterRequest": {
         "required": [
           "email",
@@ -1839,6 +1944,9 @@
   "tags": [
     {
       "name": "UserProfile"
+    },
+    {
+      "name": "ProductTypes"
     },
     {
       "name": "Products"

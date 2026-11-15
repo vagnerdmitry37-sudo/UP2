@@ -18,6 +18,14 @@ internal static class ProductsApi
 
     private static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
 
+    public static object TransferAttributes(string from = "Airport", string to = "Hotel", int maxPassengers = 3) =>
+        new { from, to, maxPassengers };
+
+    private static object DefaultAttributes(string type) =>
+        type == "Transfer"
+            ? TransferAttributes()
+            : new { durationMinutes = 180, meetingPoint = "Main square" };
+
     public static object NewProduct(
         string type = "Excursion",
         string name = "Old Town Walk",
@@ -32,7 +40,7 @@ internal static class ProductsApi
             name,
             seoDescription,
             price,
-            attributes = attributes ?? new { durationMinutes = 180, meetingPoint = "Main square" },
+            attributes = attributes ?? DefaultAttributes(type),
         };
 
     public static Task<HttpResponseMessage> CreateProductsAsync(

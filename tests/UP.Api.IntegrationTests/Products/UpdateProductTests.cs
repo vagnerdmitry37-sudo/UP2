@@ -28,7 +28,7 @@ public sealed class UpdateProductTests(ApiFactory factory) : IntegrationTest(fac
                 type: "Transfer",
                 name: "Airport to hotel",
                 price: 40m,
-                attributes: new { from = "Airport" }));
+                attributes: ProductsApi.TransferAttributes()));
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         ProductResponse product = (await response.ReadProductsAsync()).ShouldHaveSingleItem();

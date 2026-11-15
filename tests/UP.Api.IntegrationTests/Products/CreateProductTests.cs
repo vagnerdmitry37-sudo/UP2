@@ -70,7 +70,7 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
 
         HttpResponseMessage response = await Client.CreateProductsAsync(
             accessToken,
-            ProductsApi.NewProduct(type: "Transfer", name: "Airport to hotel", attributes: new { from = "Airport", to = "Hotel" }));
+            ProductsApi.NewProduct(type: "Transfer", name: "Airport to hotel", attributes: ProductsApi.TransferAttributes()));
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
         (await response.ReadProductsAsync()).ShouldHaveSingleItem().Type.ShouldBe(ProductType.Transfer);

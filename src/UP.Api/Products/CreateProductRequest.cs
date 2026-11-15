@@ -13,4 +13,9 @@ public sealed record CreateProductRequest(
     [Range(0d, double.MaxValue)] decimal Price,
     JsonElement Attributes,
     [Required(AllowEmptyStrings = true), MaxLength(200)] string ShortDescription = "",
-    [property: RichText][Required(AllowEmptyStrings = true), MaxLength(20000)] string Description = "");
+    [property: RichText][Required(AllowEmptyStrings = true), MaxLength(20000)] string Description = "")
+    : IValidatableObject
+{
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext) =>
+        ProductAttributesValidator.Validate(Type, Attributes);
+}
