@@ -14,6 +14,8 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
 {
     private const int MaxOrdersPerRequest = 100;
 
+    private const int MaxOrderItemsPerRequest = 100;
+
     [HttpPost]
     [AllowAnonymous]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status201Created)]
@@ -56,6 +58,27 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
                 detail: result.ErrorDetail),
             _ => Problem(statusCode: StatusCodes.Status400BadRequest, detail: result.ErrorDetail),
         };
+    }
+
+    [HttpDelete(OrderRoutes.Items)]
+    [Authorize]
+    [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OrderResponse>> DeleteItems(
+        Guid id,
+        [FromQuery, Required, MinLength(1), MaxLength(MaxOrderItemsPerRequest)] Guid[] ids,
+        CancellationToken cancellationToken)
+    {
+        OrderResult result = await orderService.DeleteItemsAsync(id, [.. ids.Distinct()], cancellationToken);
+
+        if (result.Order is null)
+        {
+            return Problem(statusCode: StatusCodes.Status404NotFound, detail: result.ErrorDetail);
+        }
+
+        return Ok(result.Order.ToResponse());
     }
 
     [HttpPut(OrderRoutes.Customer)]

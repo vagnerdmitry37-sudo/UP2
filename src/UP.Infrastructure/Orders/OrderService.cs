@@ -68,6 +68,37 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         return new OrderResult(order);
     }
 
+    public async Task<OrderResult> DeleteItemsAsync(
+        Guid orderId,
+        IReadOnlyList<Guid> itemIds,
+        CancellationToken cancellationToken)
+    {
+        Order? order = await dbContext.Orders
+            .Include(order => order.Items)
+            .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
+
+        if (order is null)
+        {
+            return new OrderResult(null, OrderError.OrderNotFound, $"Order {orderId} not found.");
+        }
+
+        List<Guid> missingIds = [.. itemIds.Where(id => !order.Items.Exists(item => item.Id == id))];
+        if (missingIds.Count > 0)
+        {
+            return new OrderResult(
+                null,
+                OrderError.ItemNotFound,
+                $"Order items not found: {string.Join(", ", missingIds)}");
+        }
+
+        order.Items.RemoveAll(item => itemIds.Contains(item.Id));
+        order.TotalPrice = order.Items.Sum(orderItem => orderItem.TotalPrice);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new OrderResult(order);
+    }
+
     public async Task<Order?> UpdateCustomerAsync(
         Guid id,
         string customerName,

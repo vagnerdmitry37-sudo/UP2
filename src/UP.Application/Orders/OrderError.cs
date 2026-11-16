@@ -6,4 +6,5 @@ public enum OrderError
     StartsInPast = 2,
     TooManyPassengers = 3,
     OrderNotFound = 4,
+    ItemNotFound = 5,
 }

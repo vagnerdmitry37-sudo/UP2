@@ -84,6 +84,16 @@ internal static class OrdersApi
         string? accessToken) =>
         client.SendOrderRequestAsync(HttpMethod.Post, $"{OrdersRoute}/{orderId}/items", accessToken, item);
 
+    public static Task<HttpResponseMessage> DeleteOrderItemsAsync(
+        this HttpClient client,
+        Guid orderId,
+        string? accessToken,
+        params Guid[] itemIds) =>
+        client.SendOrderRequestAsync(
+            HttpMethod.Delete,
+            $"{OrdersRoute}/{orderId}/items?{string.Join("&", itemIds.Select(id => $"ids={id}"))}",
+            accessToken);
+
     public static Task<HttpResponseMessage> UpdateOrderCustomerAsync(
         this HttpClient client,
         Guid orderId,
