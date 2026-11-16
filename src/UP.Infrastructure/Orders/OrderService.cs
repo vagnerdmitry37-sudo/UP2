@@ -129,6 +129,26 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         return new OrdersPage(items, totalRecords);
     }
 
+    public async Task<IReadOnlyList<Guid>> DeleteAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        List<Order> existingOrders = await dbContext.Orders
+            .Where(order => ids.Contains(order.Id))
+            .ToListAsync(cancellationToken);
+        List<Guid> missingIds = [.. ids.Except(existingOrders.Select(order => order.Id))];
+
+        if (missingIds.Count > 0)
+        {
+            return missingIds;
+        }
+
+        dbContext.Orders.RemoveRange(existingOrders);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return [];
+    }
+
     private async Task<OrderResult?> PrepareItemsAsync(
         List<OrderItem> items,
         DateTimeOffset now,

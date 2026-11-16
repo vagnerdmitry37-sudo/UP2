@@ -20,4 +20,6 @@ public interface IOrderService
     Task<IReadOnlyList<Order>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
 
     Task<OrdersPage> GetAllAsync(int first, int rows, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Guid>> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
 }

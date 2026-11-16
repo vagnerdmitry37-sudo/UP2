@@ -138,4 +138,26 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
 
         return Ok(page.ToResponse());
     }
+
+    [HttpDelete]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(
+        [FromQuery, Required, MinLength(1), MaxLength(MaxOrdersPerRequest)] Guid[] ids,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<Guid> missingIds = await orderService.DeleteAsync([.. ids.Distinct()], cancellationToken);
+
+        if (missingIds.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Orders not found: {string.Join(", ", missingIds)}");
+        }
+
+        return NoContent();
+    }
 }
