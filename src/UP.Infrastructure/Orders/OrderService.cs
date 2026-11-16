@@ -17,54 +17,14 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
     private const string NextNumberSql =
         "SELECT nextval('\"" + OrderConfiguration.NumberSequenceName + "\"') AS \"Value\"";
 
-    public async Task<CreateOrderResult> CreateAsync(Order order, CancellationToken cancellationToken)
+    public async Task<OrderResult> CreateAsync(Order order, CancellationToken cancellationToken)
     {
         DateTimeOffset now = timeProvider.GetUtcNow();
 
-        OrderItem? pastItem = order.Items.Find(item => item.StartsAt <= now);
-        if (pastItem is not null)
+        OrderResult? itemsError = await PrepareItemsAsync(order.Items, now, cancellationToken);
+        if (itemsError is not null)
         {
-            return new CreateOrderResult(
-                null,
-                CreateOrderError.StartsInPast,
-                $"Start time {pastItem.StartsAt:O} is in the past.");
-        }
-
-        List<Guid> productIds = [.. order.Items.Select(item => item.ProductId).Distinct()];
-        Dictionary<Guid, Product> products = await dbContext.Products
-            .AsNoTracking()
-            .Where(product => productIds.Contains(product.Id))
-            .ToDictionaryAsync(product => product.Id, cancellationToken);
-
-        List<Guid> missingIds = [.. productIds.Where(id => !products.ContainsKey(id))];
-        if (missingIds.Count > 0)
-        {
-            return new CreateOrderResult(
-                null,
-                CreateOrderError.ProductNotFound,
-                $"Products not found: {string.Join(", ", missingIds)}");
-        }
-
-        foreach (OrderItem item in order.Items)
-        {
-            Product product = products[item.ProductId];
-            int? maxPassengers = MaxPassengersOf(product);
-
-            if (item.Passengers > maxPassengers)
-            {
-                return new CreateOrderResult(
-                    null,
-                    CreateOrderError.TooManyPassengers,
-                    $"Product {product.Id} allows at most {maxPassengers} passengers.");
-            }
-
-            item.Id = Guid.CreateVersion7();
-            item.ProductType = product.Type;
-            item.ProductName = product.Name;
-            item.ProductAttributes = product.Attributes;
-            item.UnitPrice = product.Price;
-            item.StartsAt = item.StartsAt.ToUniversalTime();
-            item.TotalPrice = OrderItemPricing.TotalPrice(product.Type, product.Price, item.Passengers);
+            return itemsError;
         }
 
         long sequenceValue = await dbContext.Database
@@ -80,8 +40,64 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         dbContext.Orders.Add(order);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new CreateOrderResult(order);
+        return new OrderResult(order);
     }
+
+    public async Task<OrderResult> CreateItemAsync(Guid orderId, OrderItem item, CancellationToken cancellationToken)
+    {
+        Order? order = await dbContext.Orders
+            .Include(order => order.Items)
+            .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
+
+        if (order is null)
+        {
+            return new OrderResult(null, OrderError.OrderNotFound, $"Order {orderId} not found.");
+        }
+
+        OrderResult? itemError = await PrepareItemsAsync([item], timeProvider.GetUtcNow(), cancellationToken);
+        if (itemError is not null)
+        {
+            return itemError;
+        }
+
+        order.Items.Add(item);
+        order.TotalPrice = order.Items.Sum(orderItem => orderItem.TotalPrice);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new OrderResult(order);
+    }
+
+    public async Task<Order?> UpdateCustomerAsync(
+        Guid id,
+        string customerName,
+        string customerEmail,
+        string customerPhone,
+        CancellationToken cancellationToken)
+    {
+        Order? order = await dbContext.Orders
+            .Include(order => order.Items)
+            .SingleOrDefaultAsync(order => order.Id == id, cancellationToken);
+
+        if (order is null)
+        {
+            return null;
+        }
+
+        order.CustomerName = customerName;
+        order.CustomerEmail = customerEmail;
+        order.CustomerPhone = customerPhone;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return order;
+    }
+
+    public Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken) =>
+        dbContext.Orders
+            .AsNoTracking()
+            .Include(order => order.Items)
+            .SingleOrDefaultAsync(order => order.Id == id, cancellationToken);
 
     public async Task<OrdersPage> GetAllAsync(int first, int rows, CancellationToken cancellationToken)
     {
@@ -97,6 +113,60 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
             .ToListAsync(cancellationToken);
 
         return new OrdersPage(items, totalRecords);
+    }
+
+    private async Task<OrderResult?> PrepareItemsAsync(
+        List<OrderItem> items,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        OrderItem? pastItem = items.Find(item => item.StartsAt <= now);
+        if (pastItem is not null)
+        {
+            return new OrderResult(
+                null,
+                OrderError.StartsInPast,
+                $"Start time {pastItem.StartsAt:O} is in the past.");
+        }
+
+        List<Guid> productIds = [.. items.Select(item => item.ProductId).Distinct()];
+        Dictionary<Guid, Product> products = await dbContext.Products
+            .AsNoTracking()
+            .Where(product => productIds.Contains(product.Id))
+            .ToDictionaryAsync(product => product.Id, cancellationToken);
+
+        List<Guid> missingIds = [.. productIds.Where(id => !products.ContainsKey(id))];
+        if (missingIds.Count > 0)
+        {
+            return new OrderResult(
+                null,
+                OrderError.ProductNotFound,
+                $"Products not found: {string.Join(", ", missingIds)}");
+        }
+
+        foreach (OrderItem item in items)
+        {
+            Product product = products[item.ProductId];
+            int? maxPassengers = MaxPassengersOf(product);
+
+            if (item.Passengers > maxPassengers)
+            {
+                return new OrderResult(
+                    null,
+                    OrderError.TooManyPassengers,
+                    $"Product {product.Id} allows at most {maxPassengers} passengers.");
+            }
+
+            item.Id = Guid.CreateVersion7();
+            item.ProductType = product.Type;
+            item.ProductName = product.Name;
+            item.ProductAttributes = product.Attributes;
+            item.UnitPrice = product.Price;
+            item.StartsAt = item.StartsAt.ToUniversalTime();
+            item.TotalPrice = OrderItemPricing.TotalPrice(product.Type, product.Price, item.Passengers);
+        }
+
+        return null;
     }
 
     private static int? MaxPassengersOf(Product product)

@@ -26,7 +26,7 @@ internal static partial class OrderMapper
     [MapperIgnoreTarget(nameof(OrderItem.ProductAttributes))]
     [MapperIgnoreTarget(nameof(OrderItem.UnitPrice))]
     [MapperIgnoreTarget(nameof(OrderItem.TotalPrice))]
-    private static partial OrderItem ToOrderItem(CreateOrderItemRequest request);
+    public static partial OrderItem ToOrderItem(this CreateOrderItemRequest request);
 
     public static partial OrderResponse ToResponse(this Order order);
 

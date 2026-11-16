@@ -39,22 +39,39 @@ internal static class OrdersApi
     public static Task<HttpResponseMessage> CreateOrderAsync(this HttpClient client, object order) =>
         client.PostAsJsonAsync(OrdersRoute, order, CancellationToken);
 
-    public static async Task<HttpResponseMessage> GetOrdersAsync(
+    public static object NewCustomer(string customerName) =>
+        new
+        {
+            customerName,
+            customerEmail = "petr@example.com",
+            customerPhone = "+420 700 000 000",
+        };
+
+    public static Task<HttpResponseMessage> GetOrdersAsync(
         this HttpClient client,
         string? accessToken,
-        string query = "")
-    {
-        using var request = new HttpRequestMessage(
+        string query = "") =>
+        client.SendOrderRequestAsync(
             HttpMethod.Get,
-            query.Length == 0 ? OrdersRoute : $"{OrdersRoute}?{query}");
+            query.Length == 0 ? OrdersRoute : $"{OrdersRoute}?{query}",
+            accessToken);
 
-        if (accessToken is not null)
-        {
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        }
+    public static Task<HttpResponseMessage> GetOrderAsync(this HttpClient client, Guid orderId, string? accessToken) =>
+        client.SendOrderRequestAsync(HttpMethod.Get, $"{OrdersRoute}/{orderId}", accessToken);
 
-        return await client.SendAsync(request, CancellationToken);
-    }
+    public static Task<HttpResponseMessage> CreateOrderItemAsync(
+        this HttpClient client,
+        Guid orderId,
+        object item,
+        string? accessToken) =>
+        client.SendOrderRequestAsync(HttpMethod.Post, $"{OrdersRoute}/{orderId}/items", accessToken, item);
+
+    public static Task<HttpResponseMessage> UpdateOrderCustomerAsync(
+        this HttpClient client,
+        Guid orderId,
+        object customer,
+        string? accessToken) =>
+        client.SendOrderRequestAsync(HttpMethod.Put, $"{OrdersRoute}/{orderId}/customer", accessToken, customer);
 
     public static async Task<OrderResponse> ReadOrderAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<OrderResponse>(JsonOptions, CancellationToken)
@@ -63,4 +80,26 @@ internal static class OrdersApi
     public static async Task<OrdersPageResponse> ReadOrdersPageAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<OrdersPageResponse>(JsonOptions, CancellationToken)
         ?? throw new InvalidOperationException("Response has no orders page.");
+
+    private static async Task<HttpResponseMessage> SendOrderRequestAsync(
+        this HttpClient client,
+        HttpMethod method,
+        string route,
+        string? accessToken,
+        object? body = null)
+    {
+        using var request = new HttpRequestMessage(method, route);
+
+        if (body is not null)
+        {
+            request.Content = JsonContent.Create(body);
+        }
+
+        if (accessToken is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return await client.SendAsync(request, CancellationToken);
+    }
 }
