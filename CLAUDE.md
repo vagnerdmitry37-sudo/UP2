@@ -17,6 +17,7 @@ dotnet build UP.slnx                       # build (warnings are errors, see bel
 dotnet run --project src/UP.Api            # run the API
 dotnet format UP.slnx                      # apply .editorconfig style fixes
 dotnet test --solution UP.slnx             # integration tests (Docker must be running)
+dotnet test --solution UP.slnx --artifacts-path artifacts/test   # same, while the API is running (avoids locked DLLs in src/UP.Api/bin)
 
 dotnet tool restore                        # one-time: installs pinned dotnet-ef
 dotnet ef migrations add <Name> --project src/UP.Infrastructure --startup-project src/UP.Api --output-dir Persistence/Migrations
