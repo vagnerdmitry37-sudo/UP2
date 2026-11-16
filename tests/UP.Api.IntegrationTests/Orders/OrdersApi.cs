@@ -59,6 +59,15 @@ internal static class OrdersApi
     public static Task<HttpResponseMessage> GetOrderAsync(this HttpClient client, Guid orderId, string? accessToken) =>
         client.SendOrderRequestAsync(HttpMethod.Get, $"{OrdersRoute}/{orderId}", accessToken);
 
+    public static Task<HttpResponseMessage> GetOrdersByIdsAsync(
+        this HttpClient client,
+        string? accessToken,
+        params Guid[] ids) =>
+        client.SendOrderRequestAsync(
+            HttpMethod.Get,
+            $"{OrdersRoute}/by-ids?{string.Join("&", ids.Select(id => $"ids={id}"))}",
+            accessToken);
+
     public static Task<HttpResponseMessage> CreateOrderItemAsync(
         this HttpClient client,
         Guid orderId,
@@ -76,6 +85,10 @@ internal static class OrdersApi
     public static async Task<OrderResponse> ReadOrderAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<OrderResponse>(JsonOptions, CancellationToken)
         ?? throw new InvalidOperationException("Response has no order.");
+
+    public static async Task<IReadOnlyList<OrderResponse>> ReadOrdersAsync(this HttpResponseMessage response) =>
+        await response.Content.ReadFromJsonAsync<IReadOnlyList<OrderResponse>>(JsonOptions, CancellationToken)
+        ?? throw new InvalidOperationException("Response has no orders.");
 
     public static async Task<OrdersPageResponse> ReadOrdersPageAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<OrdersPageResponse>(JsonOptions, CancellationToken)

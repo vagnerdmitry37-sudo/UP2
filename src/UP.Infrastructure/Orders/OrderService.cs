@@ -99,6 +99,20 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
             .Include(order => order.Items)
             .SingleOrDefaultAsync(order => order.Id == id, cancellationToken);
 
+    public async Task<IReadOnlyList<Order>> GetByIdsAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        List<Order> orders = await dbContext.Orders
+            .AsNoTracking()
+            .Include(order => order.Items)
+            .Where(order => ids.Contains(order.Id))
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+
+        return [.. ids.Select(id => orders.Find(order => order.Id == id)).OfType<Order>()];
+    }
+
     public async Task<OrdersPage> GetAllAsync(int first, int rows, CancellationToken cancellationToken)
     {
         int totalRecords = await dbContext.Orders.CountAsync(cancellationToken);

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,6 +12,8 @@ namespace UP.Api.Orders;
 [Route(OrderRoutes.Base)]
 public sealed class OrdersController(IOrderService orderService) : ControllerBase
 {
+    private const int MaxOrdersPerRequest = 100;
+
     [HttpPost]
     [AllowAnonymous]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status201Created)]
@@ -95,6 +99,30 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
         }
 
         return Ok(order.ToResponse());
+    }
+
+    [HttpGet(OrderRoutes.ByIds)]
+    [Authorize]
+    [ProducesResponseType<IReadOnlyList<OrderResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<OrderResponse>>> GetByIds(
+        [FromQuery, Required, MinLength(1), MaxLength(MaxOrdersPerRequest)] Guid[] ids,
+        CancellationToken cancellationToken)
+    {
+        Guid[] requestedIds = [.. ids.Distinct()];
+        IReadOnlyList<Order> orders = await orderService.GetByIdsAsync(requestedIds, cancellationToken);
+
+        if (orders.Count != requestedIds.Length)
+        {
+            IEnumerable<Guid> missingIds = requestedIds.Except(orders.Select(order => order.Id));
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Orders not found: {string.Join(", ", missingIds)}");
+        }
+
+        return Ok(orders.ToResponses());
     }
 
     [HttpGet]

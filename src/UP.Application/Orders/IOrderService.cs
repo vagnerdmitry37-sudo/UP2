@@ -17,5 +17,7 @@ public interface IOrderService
 
     Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<Order>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
+
     Task<OrdersPage> GetAllAsync(int first, int rows, CancellationToken cancellationToken);
 }

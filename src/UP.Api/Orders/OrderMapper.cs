@@ -30,6 +30,8 @@ internal static partial class OrderMapper
 
     public static partial OrderResponse ToResponse(this Order order);
 
+    public static partial IReadOnlyList<OrderResponse> ToResponses(this IReadOnlyList<Order> orders);
+
     public static partial OrdersPageResponse ToResponse(this OrdersPage page);
 
     [MapperIgnoreSource(nameof(OrderItem.OrderId))]
