@@ -18,7 +18,7 @@ internal sealed class HistoryInterceptor(ICurrentUser currentUser, TimeProvider 
     private const string IdPropertyName = "Id";
     private const string JsonColumnType = "jsonb";
 
-    private static readonly HashSet<Type> TypesWithHistory = [typeof(Product), typeof(Order)];
+    private static readonly HashSet<Type> TypesWithHistory = [typeof(Product), typeof(Order), typeof(OrderItem)];
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
