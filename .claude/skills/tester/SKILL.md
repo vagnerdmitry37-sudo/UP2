@@ -5,11 +5,24 @@ description: Write, update and run the integration tests for recent work in the 
 
 Testing is on demand. Outside this skill, never write, rewrite or run tests. The only other place tests run is the `commit` skill's own gate. When the user asks to test, follow these steps in order.
 
+## 0. Review first
+
+Run the `reviewer` skill on the same scope before writing tests. Its findings decide what is worth testing, and a test written against a bug only freezes the bug. Report the findings; do not fix product code without asking.
+
 ## 1. Decide the scope
 
 - If the user names something ("test the images delete endpoint"), test exactly that.
 - Otherwise test the previous work: the uncommitted changes (`git status --short` and `git diff HEAD`). If the tree is clean, use the last commit (`git show --stat HEAD`).
 - List the behaviours to cover in two to five short lines in the chat before writing anything. Each behaviour is something an API client can observe: status codes, response bodies, stored rows, stored files.
+
+## 1a. Test only what is essential
+
+A test earns its place only when it would catch a regression that matters. Before writing one, name that regression in one sentence; if you cannot, skip the test.
+
+- **Test:** business rules (prices, totals, limits, dates), who may call an endpoint (401/403), refusals that must save nothing, paging and sort contracts the UI depends on, concurrency and uniqueness guarantees, and every bug that was fixed.
+- **Skip:** pass-through code, framework behaviour (model binding, `[Required]` on every field), the same rule checked again through another endpoint, every combination of inputs when one representative case covers the rule.
+- One test per behaviour. Several asserts in one test are fine when they describe one outcome.
+- Fewer, stronger tests beat many shallow ones. Say in the report what you deliberately left untested.
 
 ## 2. Write or update the tests
 

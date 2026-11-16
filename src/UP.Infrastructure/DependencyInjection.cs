@@ -13,12 +13,14 @@ using Microsoft.IdentityModel.Tokens;
 using UP.Application.Auth;
 using UP.Application.HistoryRecords;
 using UP.Application.Images;
+using UP.Application.Orders;
 using UP.Application.Products;
 using UP.Application.UserProfiles;
 using UP.Infrastructure.Auth;
 using UP.Infrastructure.HistoryRecords;
 using UP.Infrastructure.Identity;
 using UP.Infrastructure.Images;
+using UP.Infrastructure.Orders;
 using UP.Infrastructure.Persistence;
 using UP.Infrastructure.Products;
 using UP.Infrastructure.UserProfiles;
@@ -79,6 +81,7 @@ public static class DependencyInjection
 
         services.AddScoped<IImageService, ImageService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IUserProfileService, UserProfileService>();
         services.AddScoped<IHistoryRecordService, HistoryRecordService>();
         services.AddScoped<HistoryInterceptor>();
