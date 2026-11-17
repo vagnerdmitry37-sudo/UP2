@@ -68,6 +68,50 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         return new OrderResult(order);
     }
 
+    public async Task<OrderResult> UpdateItemAsync(
+        Guid orderId,
+        Guid itemId,
+        OrderItem item,
+        CancellationToken cancellationToken)
+    {
+        Order? order = await dbContext.Orders
+            .Include(order => order.Items)
+            .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
+
+        if (order is null)
+        {
+            return new OrderResult(null, OrderError.OrderNotFound, $"Order {orderId} not found.");
+        }
+
+        OrderItem? existingItem = order.Items.Find(orderItem => orderItem.Id == itemId);
+        if (existingItem is null)
+        {
+            return new OrderResult(null, OrderError.ItemNotFound, $"Order item {itemId} not found.");
+        }
+
+        OrderResult? itemError = await PrepareItemsAsync([item], timeProvider.GetUtcNow(), cancellationToken);
+        if (itemError is not null)
+        {
+            return itemError;
+        }
+
+        existingItem.ProductId = item.ProductId;
+        existingItem.ProductType = item.ProductType;
+        existingItem.ProductName = item.ProductName;
+        existingItem.ProductAttributes = item.ProductAttributes;
+        existingItem.UnitPrice = item.UnitPrice;
+        existingItem.StartsAt = item.StartsAt;
+        existingItem.Passengers = item.Passengers;
+        existingItem.PickupAddress = item.PickupAddress;
+        existingItem.Notes = item.Notes;
+        existingItem.TotalPrice = item.TotalPrice;
+        order.TotalPrice = order.Items.Sum(orderItem => orderItem.TotalPrice);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new OrderResult(order);
+    }
+
     public async Task<OrderResult> DeleteItemsAsync(
         Guid orderId,
         IReadOnlyList<Guid> itemIds,

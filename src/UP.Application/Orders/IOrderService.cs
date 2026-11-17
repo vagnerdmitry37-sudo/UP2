@@ -8,6 +8,12 @@ public interface IOrderService
 
     Task<OrderResult> CreateItemAsync(Guid orderId, OrderItem item, CancellationToken cancellationToken);
 
+    Task<OrderResult> UpdateItemAsync(
+        Guid orderId,
+        Guid itemId,
+        OrderItem item,
+        CancellationToken cancellationToken);
+
     Task<OrderResult> DeleteItemsAsync(
         Guid orderId,
         IReadOnlyList<Guid> itemIds,

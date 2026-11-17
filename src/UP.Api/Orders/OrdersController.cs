@@ -60,6 +60,34 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
         };
     }
 
+    [HttpPut(OrderRoutes.ItemById)]
+    [Authorize]
+    [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OrderResponse>> UpdateItem(
+        Guid id,
+        Guid itemId,
+        UpdateOrderItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        OrderResult result = await orderService.UpdateItemAsync(
+            id,
+            itemId,
+            request.ToOrderItem(),
+            cancellationToken);
+
+        return result switch
+        {
+            { Order: not null } => Ok(result.Order.ToResponse()),
+            { Error: OrderError.OrderNotFound or OrderError.ItemNotFound or OrderError.ProductNotFound } => Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: result.ErrorDetail),
+            _ => Problem(statusCode: StatusCodes.Status400BadRequest, detail: result.ErrorDetail),
+        };
+    }
+
     [HttpDelete(OrderRoutes.Items)]
     [Authorize]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]

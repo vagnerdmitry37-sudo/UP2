@@ -28,6 +28,15 @@ internal static partial class OrderMapper
     [MapperIgnoreTarget(nameof(OrderItem.TotalPrice))]
     public static partial OrderItem ToOrderItem(this CreateOrderItemRequest request);
 
+    [MapperIgnoreTarget(nameof(OrderItem.Id))]
+    [MapperIgnoreTarget(nameof(OrderItem.OrderId))]
+    [MapperIgnoreTarget(nameof(OrderItem.ProductType))]
+    [MapperIgnoreTarget(nameof(OrderItem.ProductName))]
+    [MapperIgnoreTarget(nameof(OrderItem.ProductAttributes))]
+    [MapperIgnoreTarget(nameof(OrderItem.UnitPrice))]
+    [MapperIgnoreTarget(nameof(OrderItem.TotalPrice))]
+    public static partial OrderItem ToOrderItem(this UpdateOrderItemRequest request);
+
     public static partial OrderResponse ToResponse(this Order order);
 
     public static partial IReadOnlyList<OrderResponse> ToResponses(this IReadOnlyList<Order> orders);
