@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using Riok.Mapperly.Abstractions;
 
+using UP.Api.Customers;
 using UP.Application.Orders;
 using UP.Domain.Orders;
 using UP.Domain.Products;
@@ -10,12 +11,14 @@ using UP.Domain.ProductTypes;
 namespace UP.Api.Orders;
 
 [Mapper]
+[UseStaticMapper(typeof(CustomerMapper))]
 internal static partial class OrderMapper
 {
     [MapperIgnoreTarget(nameof(Order.Id))]
     [MapperIgnoreTarget(nameof(Order.Number))]
     [MapperIgnoreTarget(nameof(Order.Status))]
     [MapperIgnoreTarget(nameof(Order.CustomerId))]
+    [MapperIgnoreTarget(nameof(Order.Customer))]
     [MapperIgnoreTarget(nameof(Order.CreatedAt))]
     [MapperIgnoreTarget(nameof(Order.TotalPrice))]
     public static partial Order ToOrder(this CreateOrderRequest request);

@@ -33,7 +33,7 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
         builder.HasIndex(customer => customer.Email).IsUnique();
 
         builder.HasMany(customer => customer.Orders)
-            .WithOne()
+            .WithOne(order => order.Customer)
             .HasForeignKey(order => order.CustomerId)
             .OnDelete(DeleteBehavior.Restrict);
     }

@@ -47,6 +47,7 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
     {
         Order? order = await dbContext.Orders
             .Include(order => order.Items)
+            .Include(order => order.Customer)
             .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
 
         if (order is null)
@@ -76,6 +77,7 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
     {
         Order? order = await dbContext.Orders
             .Include(order => order.Items)
+            .Include(order => order.Customer)
             .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
 
         if (order is null)
@@ -119,6 +121,7 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
     {
         Order? order = await dbContext.Orders
             .Include(order => order.Items)
+            .Include(order => order.Customer)
             .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
 
         if (order is null)
@@ -147,6 +150,7 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         dbContext.Orders
             .AsNoTracking()
             .Include(order => order.Items)
+            .Include(order => order.Customer)
             .SingleOrDefaultAsync(order => order.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<Order>> GetByIdsAsync(
@@ -156,6 +160,7 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         List<Order> orders = await dbContext.Orders
             .AsNoTracking()
             .Include(order => order.Items)
+            .Include(order => order.Customer)
             .Where(order => ids.Contains(order.Id))
             .AsSplitQuery()
             .ToListAsync(cancellationToken);
@@ -169,6 +174,7 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         List<Order> items = await dbContext.Orders
             .AsNoTracking()
             .Include(order => order.Items)
+            .Include(order => order.Customer)
             .OrderByDescending(order => order.CreatedAt)
             .ThenByDescending(order => order.Id)
             .Skip(first)

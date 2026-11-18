@@ -1,3 +1,5 @@
+using UP.Domain.Customers;
+
 namespace UP.Domain.Orders;
 
 public sealed class Order
@@ -9,6 +11,8 @@ public sealed class Order
     public OrderStatus Status { get; set; }
 
     public Guid? CustomerId { get; set; }
+
+    public Customer? Customer { get; set; }
 
     public DateTimeOffset CreatedAt { get; set; }
 
