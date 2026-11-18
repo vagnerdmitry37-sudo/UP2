@@ -8,7 +8,7 @@ public interface IProductService
 
     Task<ProductsPage> GetAllAsync(ProductsQuery query, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Product>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ProductDetails>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
 
     Task<UpdateProductsResult> UpdateAsync(IReadOnlyList<Product> products, CancellationToken cancellationToken);
 

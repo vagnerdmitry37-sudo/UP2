@@ -605,7 +605,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductResponse"
+                    "$ref": "#/components/schemas/ProductDetailsResponse"
                   }
                 }
               },
@@ -613,7 +613,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductResponse"
+                    "$ref": "#/components/schemas/ProductDetailsResponse"
                   }
                 }
               },
@@ -621,7 +621,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductResponse"
+                    "$ref": "#/components/schemas/ProductDetailsResponse"
                   }
                 }
               }
@@ -2820,6 +2820,58 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "ProductDetailsResponse": {
+        "required": [
+          "id",
+          "type",
+          "typeLabel",
+          "name",
+          "seoDescription",
+          "shortDescription",
+          "description",
+          "price",
+          "attributes",
+          "images"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ProductType"
+          },
+          "typeLabel": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "seoDescription": {
+            "type": "string"
+          },
+          "shortDescription": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number",
+            "format": "double"
+          },
+          "attributes": {
+            "$ref": "#/components/schemas/JsonElement"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageResponse"
+            }
           }
         }
       },

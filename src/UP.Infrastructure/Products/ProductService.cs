@@ -49,7 +49,7 @@ internal sealed class ProductService(AppDbContext dbContext, IImageService image
         return new ProductsPage(items, totalRecords);
     }
 
-    public async Task<IReadOnlyList<Product>> GetByIdsAsync(
+    public async Task<IReadOnlyList<ProductDetails>> GetByIdsAsync(
         IReadOnlyList<Guid> ids,
         CancellationToken cancellationToken)
     {
@@ -58,7 +58,20 @@ internal sealed class ProductService(AppDbContext dbContext, IImageService image
             .Where(product => ids.Contains(product.Id))
             .ToListAsync(cancellationToken);
 
-        return [.. ids.Select(id => products.Find(product => product.Id == id)).OfType<Product>()];
+        IReadOnlyList<PublicImage> images = await imageService.GetAllAsync(
+            ImageEntityType.Product,
+            ids,
+            cancellationToken);
+
+        return
+        [
+            .. ids
+                .Select(id => products.Find(product => product.Id == id))
+                .OfType<Product>()
+                .Select(product => new ProductDetails(
+                    product,
+                    [.. images.Where(image => image.EntityId == product.Id)])),
+        ];
     }
 
     public async Task<UpdateProductsResult> UpdateAsync(

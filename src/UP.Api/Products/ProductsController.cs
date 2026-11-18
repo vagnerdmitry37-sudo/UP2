@@ -43,19 +43,19 @@ public sealed class ProductsController(IProductService productService) : Control
     }
 
     [HttpGet(ProductRoutes.ByIds)]
-    [ProducesResponseType<IReadOnlyList<ProductResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<IReadOnlyList<ProductDetailsResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetByIds(
+    public async Task<ActionResult<IReadOnlyList<ProductDetailsResponse>>> GetByIds(
         [FromQuery, Required, MinLength(1), MaxLength(MaxProductsPerRequest)] Guid[] ids,
         CancellationToken cancellationToken)
     {
         Guid[] requestedIds = [.. ids.Distinct()];
-        IReadOnlyList<Product> products = await productService.GetByIdsAsync(requestedIds, cancellationToken);
+        IReadOnlyList<ProductDetails> products = await productService.GetByIdsAsync(requestedIds, cancellationToken);
 
         if (products.Count != requestedIds.Length)
         {
-            IEnumerable<Guid> missingIds = requestedIds.Except(products.Select(product => product.Id));
+            IEnumerable<Guid> missingIds = requestedIds.Except(products.Select(details => details.Product.Id));
             return Problem(
                 statusCode: StatusCodes.Status404NotFound,
                 detail: $"Products not found: {string.Join(", ", missingIds)}");
