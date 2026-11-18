@@ -50,6 +50,11 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(order => order.TotalPrice)
             .HasPrecision(PricePrecision, PriceScale);
 
+        builder.HasOne(order => order.Customer)
+            .WithMany(customer => customer.Orders)
+            .HasForeignKey(order => order.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(order => order.Items)
             .WithOne()
             .HasForeignKey(item => item.OrderId)
@@ -58,5 +63,6 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasIndex(order => order.Number).IsUnique();
         builder.HasIndex(order => order.CreatedAt);
         builder.HasIndex(order => order.Status);
+        builder.HasIndex(order => order.CustomerId);
     }
 }

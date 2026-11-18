@@ -1,3 +1,5 @@
+using UP.Domain.Customers;
+
 namespace UP.Domain.Orders;
 
 public sealed class Order
@@ -7,6 +9,10 @@ public sealed class Order
     public string Number { get; set; } = string.Empty;
 
     public OrderStatus Status { get; set; }
+
+    public Guid? CustomerId { get; set; }
+
+    public Customer? Customer { get; set; }
 
     public string CustomerName { get; set; } = string.Empty;
 
