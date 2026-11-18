@@ -259,23 +259,8 @@ namespace UP.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("CustomerEmail")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
                     b.Property<Guid?>("CustomerId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("CustomerPhone")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Number")
                         .IsRequired()
@@ -588,12 +573,10 @@ namespace UP.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("UP.Domain.Orders.Order", b =>
                 {
-                    b.HasOne("UP.Domain.Customers.Customer", "Customer")
+                    b.HasOne("UP.Domain.Customers.Customer", null)
                         .WithMany("Orders")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("UP.Domain.Orders.OrderItem", b =>

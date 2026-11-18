@@ -24,7 +24,6 @@ public sealed class GetOrderTests(ApiFactory factory) : IntegrationTest(factory)
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         OrderResponse order = await response.ReadOrderAsync();
         order.Number.ShouldBe(created.Number);
-        order.CustomerName.ShouldBe("Anna Novak");
         order.Items.Single().ProductId.ShouldBe(productId);
     }
 
@@ -51,7 +50,7 @@ public sealed class GetOrderTests(ApiFactory factory) : IntegrationTest(factory)
     private async Task<OrderResponse> CreateOrderAsync(Guid productId)
     {
         HttpResponseMessage response = await Client.CreateOrderAsync(
-            OrdersApi.NewOrder("Anna Novak", OrdersApi.NewItem(productId)));
+            OrdersApi.NewOrder(OrdersApi.NewItem(productId)));
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }

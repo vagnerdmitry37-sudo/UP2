@@ -19,13 +19,6 @@ public interface IOrderService
         IReadOnlyList<Guid> itemIds,
         CancellationToken cancellationToken);
 
-    Task<Order?> UpdateCustomerAsync(
-        Guid id,
-        string customerName,
-        string customerEmail,
-        string customerPhone,
-        CancellationToken cancellationToken);
-
     Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Order>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);

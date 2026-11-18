@@ -72,7 +72,7 @@ public sealed class CreateOrderItemTests(ApiFactory factory) : IntegrationTest(f
     private async Task<OrderResponse> CreateOrderAsync(Guid productId)
     {
         HttpResponseMessage response = await Client.CreateOrderAsync(
-            OrdersApi.NewOrder("Anna Novak", OrdersApi.NewItem(productId)));
+            OrdersApi.NewOrder(OrdersApi.NewItem(productId)));
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }

@@ -11,9 +11,6 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
     private const int NumberMaxLength = 20;
     private const int StatusMaxLength = 50;
-    private const int CustomerNameMaxLength = 200;
-    private const int CustomerEmailMaxLength = 256;
-    private const int CustomerPhoneMaxLength = 50;
     private const int PricePrecision = 18;
     private const int PriceScale = 2;
 
@@ -35,25 +32,8 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .HasMaxLength(StatusMaxLength)
             .IsRequired();
 
-        builder.Property(order => order.CustomerName)
-            .HasMaxLength(CustomerNameMaxLength)
-            .IsRequired();
-
-        builder.Property(order => order.CustomerEmail)
-            .HasMaxLength(CustomerEmailMaxLength)
-            .IsRequired();
-
-        builder.Property(order => order.CustomerPhone)
-            .HasMaxLength(CustomerPhoneMaxLength)
-            .IsRequired();
-
         builder.Property(order => order.TotalPrice)
             .HasPrecision(PricePrecision, PriceScale);
-
-        builder.HasOne(order => order.Customer)
-            .WithMany(customer => customer.Orders)
-            .HasForeignKey(order => order.CustomerId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(order => order.Items)
             .WithOne()
@@ -63,6 +43,5 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.HasIndex(order => order.Number).IsUnique();
         builder.HasIndex(order => order.CreatedAt);
         builder.HasIndex(order => order.Status);
-        builder.HasIndex(order => order.CustomerId);
     }
 }

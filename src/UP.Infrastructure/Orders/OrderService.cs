@@ -143,31 +143,6 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         return new OrderResult(order);
     }
 
-    public async Task<Order?> UpdateCustomerAsync(
-        Guid id,
-        string customerName,
-        string customerEmail,
-        string customerPhone,
-        CancellationToken cancellationToken)
-    {
-        Order? order = await dbContext.Orders
-            .Include(order => order.Items)
-            .SingleOrDefaultAsync(order => order.Id == id, cancellationToken);
-
-        if (order is null)
-        {
-            return null;
-        }
-
-        order.CustomerName = customerName;
-        order.CustomerEmail = customerEmail;
-        order.CustomerPhone = customerPhone;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return order;
-    }
-
     public Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Orders
             .AsNoTracking()

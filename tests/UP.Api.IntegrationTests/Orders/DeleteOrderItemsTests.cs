@@ -90,7 +90,7 @@ public sealed class DeleteOrderItemsTests(ApiFactory factory) : IntegrationTest(
 
     private async Task<OrderResponse> CreateOrderAsync(params object[] items)
     {
-        HttpResponseMessage response = await Client.CreateOrderAsync(OrdersApi.NewOrder("Anna Novak", items));
+        HttpResponseMessage response = await Client.CreateOrderAsync(OrdersApi.NewOrder(items));
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }

@@ -11,7 +11,6 @@ namespace UP.Api.IntegrationTests.Orders;
 
 public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(factory)
 {
-    private const string Customer = "Anna Novak";
     private const string ExcursionAttributes = """{"durationMinutes":360,"meetingPoint":"Hotel Pupp"}""";
 
     [Fact]
@@ -24,7 +23,6 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
             """{"from":"Airport","to":"Hotel","maxPassengers":4}""");
 
         HttpResponseMessage response = await Client.CreateOrderAsync(OrdersApi.NewOrder(
-            Customer,
             OrdersApi.NewItem(excursion.Id, passengers: 3),
             OrdersApi.NewItem(transfer.Id, passengers: 3)));
 
@@ -56,7 +54,6 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
         Product product = await SeedProductAsync(ProductType.GroupExcursion, 40m, ExcursionAttributes);
 
         HttpResponseMessage response = await Client.CreateOrderAsync(OrdersApi.NewOrder(
-            Customer,
             OrdersApi.NewItem(product.Id, startsAt: DateTimeOffset.UtcNow.AddHours(-1))));
 
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -67,7 +64,6 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
     public async Task Unknown_product_is_refused_with_not_found_and_saves_nothing()
     {
         HttpResponseMessage response = await Client.CreateOrderAsync(OrdersApi.NewOrder(
-            Customer,
             OrdersApi.NewItem(Guid.CreateVersion7())));
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -83,7 +79,6 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
             """{"durationMinutes":240,"maxPassengers":4}""");
 
         HttpResponseMessage response = await Client.CreateOrderAsync(OrdersApi.NewOrder(
-            Customer,
             OrdersApi.NewItem(product.Id, passengers: 5)));
 
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -93,7 +88,7 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
     private async Task<OrderResponse> CreateOrderAsync(Guid productId)
     {
         HttpResponseMessage response = await Client.CreateOrderAsync(
-            OrdersApi.NewOrder(Customer, OrdersApi.NewItem(productId)));
+            OrdersApi.NewOrder(OrdersApi.NewItem(productId)));
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }

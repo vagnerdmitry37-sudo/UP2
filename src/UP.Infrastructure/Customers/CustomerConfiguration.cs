@@ -31,5 +31,10 @@ internal sealed class CustomerConfiguration : IEntityTypeConfiguration<Customer>
             .IsRequired();
 
         builder.HasIndex(customer => customer.Email).IsUnique();
+
+        builder.HasMany(customer => customer.Orders)
+            .WithOne()
+            .HasForeignKey(order => order.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

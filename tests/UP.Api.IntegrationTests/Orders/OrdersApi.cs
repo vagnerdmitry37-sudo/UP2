@@ -27,25 +27,14 @@ internal static class OrdersApi
             pickupAddress = "Hotel Pupp, Karlovy Vary",
         };
 
-    public static object NewOrder(string customerName, params object[] items) =>
+    public static object NewOrder(params object[] items) =>
         new
         {
-            customerName,
-            customerEmail = "anna@example.com",
-            customerPhone = "+420 600 000 000",
             items,
         };
 
     public static Task<HttpResponseMessage> CreateOrderAsync(this HttpClient client, object order) =>
         client.PostAsJsonAsync(OrdersRoute, order, CancellationToken);
-
-    public static object NewCustomer(string customerName) =>
-        new
-        {
-            customerName,
-            customerEmail = "petr@example.com",
-            customerPhone = "+420 700 000 000",
-        };
 
     public static Task<HttpResponseMessage> GetOrdersAsync(
         this HttpClient client,
@@ -101,13 +90,6 @@ internal static class OrdersApi
             HttpMethod.Delete,
             $"{OrdersRoute}/{orderId}/items?{string.Join("&", itemIds.Select(id => $"ids={id}"))}",
             accessToken);
-
-    public static Task<HttpResponseMessage> UpdateOrderCustomerAsync(
-        this HttpClient client,
-        Guid orderId,
-        object customer,
-        string? accessToken) =>
-        client.SendOrderRequestAsync(HttpMethod.Put, $"{OrdersRoute}/{orderId}/customer", accessToken, customer);
 
     public static async Task<OrderResponse> ReadOrderAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<OrderResponse>(JsonOptions, CancellationToken)
