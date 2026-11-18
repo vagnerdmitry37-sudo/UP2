@@ -6,6 +6,7 @@ using UP.Api.Auth;
 using UP.Api.Images;
 using UP.Api.IntegrationTests.Auth;
 using UP.Api.IntegrationTests.Images;
+using UP.Api.IntegrationTests.Orders;
 using UP.Api.IntegrationTests.TestHost;
 using UP.Api.Products;
 
@@ -74,6 +75,22 @@ public sealed class DeleteProductTests(ApiFactory factory) : IntegrationTest(fac
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         (await response.Content.ReadAsStringAsync(CancellationToken)).ShouldContain(unknownId.ToString());
         (await SavedIdsAsync()).ShouldBe([created.Id]);
+    }
+
+    [Fact]
+    public async Task Product_used_in_order_is_refused_with_conflict_and_deletes_nothing()
+    {
+        string accessToken = await SignInAsync();
+        List<ProductResponse> created = await CreateProductsAsync(accessToken, 2);
+        Guid orderedId = created[0].Id;
+        (await Client.CreateOrderForNewCustomerAsync(accessToken, OrdersApi.NewItem(orderedId)))
+            .EnsureSuccessStatusCode();
+
+        HttpResponseMessage response = await Client.DeleteProductsAsync(accessToken, orderedId, created[1].Id);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        (await response.Content.ReadAsStringAsync(CancellationToken)).ShouldContain(orderedId.ToString());
+        (await SavedIdsAsync()).ShouldBe([orderedId, created[1].Id], ignoreOrder: true);
     }
 
     [Fact]

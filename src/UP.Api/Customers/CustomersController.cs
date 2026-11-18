@@ -118,4 +118,33 @@ public sealed class CustomersController(ICustomerService customerService) : Cont
 
         return Ok(customers.ToResponses());
     }
+
+    [HttpDelete]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Delete(
+        [FromQuery, Required, MinLength(1), MaxLength(MaxCustomersPerRequest)] Guid[] ids,
+        CancellationToken cancellationToken)
+    {
+        DeleteCustomersResult result = await customerService.DeleteAsync([.. ids.Distinct()], cancellationToken);
+
+        if (result.MissingIds.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Customers not found: {string.Join(", ", result.MissingIds)}");
+        }
+
+        if (result.IdsWithOrders.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                detail: $"Customers still have orders: {string.Join(", ", result.IdsWithOrders)}");
+        }
+
+        return NoContent();
+    }
 }

@@ -53,6 +53,23 @@ internal static class CustomersApi
         return await client.SendAsync(request, CancellationToken);
     }
 
+    public static async Task<HttpResponseMessage> DeleteCustomersAsync(
+        this HttpClient client,
+        string? accessToken,
+        params Guid[] ids)
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"{CustomersRoute}?{string.Join("&", ids.Select(id => $"ids={id}"))}");
+
+        if (accessToken is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return await client.SendAsync(request, CancellationToken);
+    }
+
     public static async Task<HttpResponseMessage> GetCustomersAsync(
         this HttpClient client,
         string? accessToken,

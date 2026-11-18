@@ -71,6 +71,37 @@ internal sealed class CustomerService(AppDbContext dbContext, TimeProvider timeP
             []);
     }
 
+    public async Task<DeleteCustomersResult> DeleteAsync(
+        IReadOnlyList<Guid> ids,
+        CancellationToken cancellationToken)
+    {
+        List<Customer> existingCustomers = await dbContext.Customers
+            .Where(customer => ids.Contains(customer.Id))
+            .ToListAsync(cancellationToken);
+        List<Guid> missingIds = [.. ids.Except(existingCustomers.Select(customer => customer.Id))];
+
+        if (missingIds.Count > 0)
+        {
+            return new DeleteCustomersResult(missingIds, []);
+        }
+
+        List<Guid> idsWithOrders = await dbContext.Orders
+            .Where(order => order.CustomerId != null && ids.Contains(order.CustomerId.Value))
+            .Select(order => order.CustomerId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (idsWithOrders.Count > 0)
+        {
+            return new DeleteCustomersResult([], idsWithOrders);
+        }
+
+        dbContext.Customers.RemoveRange(existingCustomers);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new DeleteCustomersResult([], []);
+    }
+
     public async Task<CustomersPage> GetAllAsync(
         int first,
         int rows,
