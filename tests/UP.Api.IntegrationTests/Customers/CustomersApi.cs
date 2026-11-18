@@ -35,6 +35,36 @@ internal static class CustomersApi
         return await client.SendAsync(request, CancellationToken);
     }
 
+    public static async Task<HttpResponseMessage> GetCustomersAsync(
+        this HttpClient client,
+        string? accessToken,
+        string query = "")
+    {
+        using var request = new HttpRequestMessage(
+            HttpMethod.Get,
+            query.Length == 0 ? CustomersRoute : $"{CustomersRoute}?{query}");
+
+        if (accessToken is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return await client.SendAsync(request, CancellationToken);
+    }
+
+    public static async Task<Guid> CreateCustomerIdAsync(this HttpClient client, string accessToken)
+    {
+        HttpResponseMessage response = await client.CreateCustomerAsync(
+            accessToken,
+            NewCustomer(email: $"customer-{Guid.NewGuid():N}@example.com"));
+        response.EnsureSuccessStatusCode();
+        return (await response.ReadCustomerAsync()).Id;
+    }
+
+    public static async Task<CustomersPageResponse> ReadCustomersPageAsync(this HttpResponseMessage response) =>
+        await response.Content.ReadFromJsonAsync<CustomersPageResponse>(CancellationToken)
+        ?? throw new InvalidOperationException("Response has no customers page.");
+
     public static async Task<CustomerResponse> ReadCustomerAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<CustomerResponse>(CancellationToken)
         ?? throw new InvalidOperationException("Response has no customer.");

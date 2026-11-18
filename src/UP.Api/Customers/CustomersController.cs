@@ -44,7 +44,11 @@ public sealed class CustomersController(ICustomerService customerService) : Cont
         [FromQuery] GetCustomersRequest request,
         CancellationToken cancellationToken)
     {
-        CustomersPage page = await customerService.GetAllAsync(request.First, request.Rows, cancellationToken);
+        CustomersPage page = await customerService.GetAllAsync(
+            request.First,
+            request.Rows,
+            request.GlobalFilter,
+            cancellationToken);
 
         return Ok(page.ToResponse());
     }

@@ -82,8 +82,10 @@ public sealed class GetOrdersByIdsTests(ApiFactory factory) : IntegrationTest(fa
 
     private async Task<OrderResponse> CreateOrderAsync(Guid productId)
     {
-        HttpResponseMessage response = await Client.CreateOrderAsync(
-            OrdersApi.NewOrder(OrdersApi.NewItem(productId)));
+        string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
+        HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(
+            accessToken,
+            OrdersApi.NewItem(productId));
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }

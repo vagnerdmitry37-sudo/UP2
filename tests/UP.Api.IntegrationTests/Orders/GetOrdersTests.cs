@@ -24,15 +24,16 @@ public sealed class GetOrdersTests(ApiFactory factory) : IntegrationTest(factory
     public async Task Orders_are_paged_newest_first_with_their_items_and_total_of_all_orders()
     {
         Guid productId = await SeedProductAsync();
+        string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
         List<Guid> createdIds = [];
         for (int orderNumber = 0; orderNumber < 3; orderNumber++)
         {
-            HttpResponseMessage created = await Client.CreateOrderAsync(
-                OrdersApi.NewOrder(OrdersApi.NewItem(productId)));
+            HttpResponseMessage created = await Client.CreateOrderForNewCustomerAsync(
+                accessToken,
+                OrdersApi.NewItem(productId));
             created.EnsureSuccessStatusCode();
             createdIds.Add((await created.ReadOrderAsync()).Id);
         }
-        string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
 
         OrdersPageResponse firstPage = await ReadPageAsync(accessToken, "first=0&rows=2");
         OrdersPageResponse secondPage = await ReadPageAsync(accessToken, "first=2&rows=2");

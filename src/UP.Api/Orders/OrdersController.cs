@@ -17,9 +17,10 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
     private const int MaxOrderItemsPerRequest = 100;
 
     [HttpPost]
-    [AllowAnonymous]
+    [Authorize]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponse>> Create(
         CreateOrderRequest request,
@@ -30,7 +31,7 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
         return result switch
         {
             { Order: not null } => StatusCode(StatusCodes.Status201Created, result.Order.ToResponse()),
-            { Error: OrderError.ProductNotFound } => Problem(
+            { Error: OrderError.CustomerNotFound or OrderError.ProductNotFound } => Problem(
                 statusCode: StatusCodes.Status404NotFound,
                 detail: result.ErrorDetail),
             _ => Problem(statusCode: StatusCodes.Status400BadRequest, detail: result.ErrorDetail),

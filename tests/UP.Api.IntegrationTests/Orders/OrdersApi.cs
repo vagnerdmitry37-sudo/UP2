@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using UP.Api.IntegrationTests.Customers;
 using UP.Api.Orders;
 
 namespace UP.Api.IntegrationTests.Orders;
@@ -27,14 +28,27 @@ internal static class OrdersApi
             pickupAddress = "Hotel Pupp, Karlovy Vary",
         };
 
-    public static object NewOrder(params object[] items) =>
+    public static object NewOrder(Guid customerId, params object[] items) =>
         new
         {
+            customerId,
             items,
         };
 
-    public static Task<HttpResponseMessage> CreateOrderAsync(this HttpClient client, object order) =>
-        client.PostAsJsonAsync(OrdersRoute, order, CancellationToken);
+    public static Task<HttpResponseMessage> CreateOrderAsync(
+        this HttpClient client,
+        string? accessToken,
+        object order) =>
+        client.SendOrderRequestAsync(HttpMethod.Post, OrdersRoute, accessToken, order);
+
+    public static async Task<HttpResponseMessage> CreateOrderForNewCustomerAsync(
+        this HttpClient client,
+        string accessToken,
+        params object[] items)
+    {
+        Guid customerId = await client.CreateCustomerIdAsync(accessToken);
+        return await client.CreateOrderAsync(accessToken, NewOrder(customerId, items));
+    }
 
     public static Task<HttpResponseMessage> GetOrdersAsync(
         this HttpClient client,

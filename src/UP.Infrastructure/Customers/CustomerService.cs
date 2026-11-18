@@ -8,6 +8,8 @@ namespace UP.Infrastructure.Customers;
 
 internal sealed class CustomerService(AppDbContext dbContext, TimeProvider timeProvider) : ICustomerService
 {
+    private const string LikeEscape = @"\";
+
     public async Task<Customer?> CreateAsync(Customer customer, CancellationToken cancellationToken)
     {
         bool emailTaken = await dbContext.Customers.AnyAsync(
@@ -27,11 +29,25 @@ internal sealed class CustomerService(AppDbContext dbContext, TimeProvider timeP
         return customer;
     }
 
-    public async Task<CustomersPage> GetAllAsync(int first, int rows, CancellationToken cancellationToken)
+    public async Task<CustomersPage> GetAllAsync(
+        int first,
+        int rows,
+        string? globalFilter,
+        CancellationToken cancellationToken)
     {
-        int totalRecords = await dbContext.Customers.CountAsync(cancellationToken);
-        List<Customer> items = await dbContext.Customers
-            .AsNoTracking()
+        IQueryable<Customer> matching = dbContext.Customers.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(globalFilter))
+        {
+            string pattern = $"%{EscapeLikePattern(globalFilter.Trim())}%";
+            matching = matching.Where(customer =>
+                EF.Functions.ILike(customer.Name, pattern, LikeEscape)
+                || EF.Functions.ILike(customer.Email, pattern, LikeEscape)
+                || EF.Functions.ILike(customer.Phone, pattern, LikeEscape));
+        }
+
+        int totalRecords = await matching.CountAsync(cancellationToken);
+        List<Customer> items = await matching
             .OrderByDescending(customer => customer.CreatedAt)
             .ThenByDescending(customer => customer.Id)
             .Skip(first)
@@ -52,4 +68,9 @@ internal sealed class CustomerService(AppDbContext dbContext, TimeProvider timeP
 
         return [.. ids.Select(id => customers.Find(customer => customer.Id == id)).OfType<Customer>()];
     }
+
+    private static string EscapeLikePattern(string text) =>
+        text.Replace(LikeEscape, LikeEscape + LikeEscape, StringComparison.Ordinal)
+            .Replace("%", LikeEscape + "%", StringComparison.Ordinal)
+            .Replace("_", LikeEscape + "_", StringComparison.Ordinal);
 }

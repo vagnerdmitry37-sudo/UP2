@@ -17,7 +17,6 @@ internal static partial class OrderMapper
     [MapperIgnoreTarget(nameof(Order.Id))]
     [MapperIgnoreTarget(nameof(Order.Number))]
     [MapperIgnoreTarget(nameof(Order.Status))]
-    [MapperIgnoreTarget(nameof(Order.CustomerId))]
     [MapperIgnoreTarget(nameof(Order.Customer))]
     [MapperIgnoreTarget(nameof(Order.CreatedAt))]
     [MapperIgnoreTarget(nameof(Order.TotalPrice))]

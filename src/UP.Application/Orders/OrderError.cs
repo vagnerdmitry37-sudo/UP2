@@ -7,4 +7,5 @@ public enum OrderError
     TooManyPassengers = 3,
     OrderNotFound = 4,
     ItemNotFound = 5,
+    CustomerNotFound = 6,
 }

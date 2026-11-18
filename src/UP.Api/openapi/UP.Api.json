@@ -736,6 +736,26 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -2098,6 +2118,13 @@
               "type": "integer",
               "format": "int32"
             }
+          },
+          {
+            "name": "globalFilter",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -2676,10 +2703,15 @@
       },
       "CreateOrderRequest": {
         "required": [
+          "customerId",
           "items"
         ],
         "type": "object",
         "properties": {
+          "customerId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "items": {
             "type": "array",
             "items": {

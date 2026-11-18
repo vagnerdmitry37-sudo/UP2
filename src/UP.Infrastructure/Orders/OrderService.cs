@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 
 using UP.Application.Orders;
+using UP.Domain.Customers;
 using UP.Domain.Orders;
 using UP.Domain.Products;
 using UP.Infrastructure.Persistence;
@@ -19,6 +20,14 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
 
     public async Task<OrderResult> CreateAsync(Order order, CancellationToken cancellationToken)
     {
+        Customer? customer = await dbContext.Customers
+            .SingleOrDefaultAsync(customer => customer.Id == order.CustomerId, cancellationToken);
+        if (customer is null)
+        {
+            return new OrderResult(null, OrderError.CustomerNotFound, $"Customer {order.CustomerId} not found.");
+        }
+
+        order.Customer = customer;
         DateTimeOffset now = timeProvider.GetUtcNow();
 
         OrderResult? itemsError = await PrepareItemsAsync(order.Items, now, cancellationToken);
