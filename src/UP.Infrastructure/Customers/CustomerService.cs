@@ -6,8 +6,27 @@ using UP.Infrastructure.Persistence;
 
 namespace UP.Infrastructure.Customers;
 
-internal sealed class CustomerService(AppDbContext dbContext) : ICustomerService
+internal sealed class CustomerService(AppDbContext dbContext, TimeProvider timeProvider) : ICustomerService
 {
+    public async Task<Customer?> CreateAsync(Customer customer, CancellationToken cancellationToken)
+    {
+        bool emailTaken = await dbContext.Customers.AnyAsync(
+            existing => existing.Email == customer.Email,
+            cancellationToken);
+
+        if (emailTaken)
+        {
+            return null;
+        }
+
+        customer.Id = Guid.CreateVersion7();
+        customer.CreatedAt = timeProvider.GetUtcNow();
+        dbContext.Customers.Add(customer);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return customer;
+    }
+
     public async Task<CustomersPage> GetAllAsync(int first, int rows, CancellationToken cancellationToken)
     {
         int totalRecords = await dbContext.Customers.CountAsync(cancellationToken);

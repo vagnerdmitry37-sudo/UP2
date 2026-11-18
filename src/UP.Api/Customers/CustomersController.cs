@@ -15,6 +15,27 @@ public sealed class CustomersController(ICustomerService customerService) : Cont
 {
     private const int MaxCustomersPerRequest = 100;
 
+    [HttpPost]
+    [ProducesResponseType<CustomerResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CustomerResponse>> Create(
+        CreateCustomerRequest request,
+        CancellationToken cancellationToken)
+    {
+        Customer? created = await customerService.CreateAsync(request.ToCustomer(), cancellationToken);
+
+        if (created is null)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                detail: $"A customer with email {request.Email} already exists.");
+        }
+
+        return StatusCode(StatusCodes.Status201Created, created.ToResponse());
+    }
+
     [HttpGet]
     [ProducesResponseType<CustomersPageResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
