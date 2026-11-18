@@ -13,6 +13,10 @@ internal static partial class CustomerMapper
     [MapperIgnoreTarget(nameof(Customer.Orders))]
     public static partial Customer ToCustomer(this CreateCustomerRequest request);
 
+    [MapperIgnoreTarget(nameof(Customer.CreatedAt))]
+    [MapperIgnoreTarget(nameof(Customer.Orders))]
+    public static partial Customer ToCustomer(this UpdateCustomerRequest request);
+
     [MapperIgnoreSource(nameof(Customer.Orders))]
     public static partial CustomerResponse ToResponse(this Customer customer);
 

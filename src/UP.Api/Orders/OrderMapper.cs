@@ -22,6 +22,14 @@ internal static partial class OrderMapper
     [MapperIgnoreTarget(nameof(Order.TotalPrice))]
     public static partial Order ToOrder(this CreateOrderRequest request);
 
+    [MapperIgnoreTarget(nameof(Order.Number))]
+    [MapperIgnoreTarget(nameof(Order.Status))]
+    [MapperIgnoreTarget(nameof(Order.Customer))]
+    [MapperIgnoreTarget(nameof(Order.CreatedAt))]
+    [MapperIgnoreTarget(nameof(Order.TotalPrice))]
+    [MapperIgnoreTarget(nameof(Order.Items))]
+    public static partial Order ToOrder(this UpdateOrderRequest request);
+
     [MapperIgnoreTarget(nameof(OrderItem.Id))]
     [MapperIgnoreTarget(nameof(OrderItem.OrderId))]
     [MapperIgnoreTarget(nameof(OrderItem.ProductType))]

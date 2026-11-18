@@ -35,6 +35,24 @@ internal static class CustomersApi
         return await client.SendAsync(request, CancellationToken);
     }
 
+    public static async Task<HttpResponseMessage> UpdateCustomersAsync(
+        this HttpClient client,
+        string? accessToken,
+        params object[] customers)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Put, CustomersRoute)
+        {
+            Content = JsonContent.Create(customers),
+        };
+
+        if (accessToken is not null)
+        {
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        }
+
+        return await client.SendAsync(request, CancellationToken);
+    }
+
     public static async Task<HttpResponseMessage> GetCustomersAsync(
         this HttpClient client,
         string? accessToken,
@@ -64,6 +82,10 @@ internal static class CustomersApi
     public static async Task<CustomersPageResponse> ReadCustomersPageAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<CustomersPageResponse>(CancellationToken)
         ?? throw new InvalidOperationException("Response has no customers page.");
+
+    public static async Task<IReadOnlyList<CustomerResponse>> ReadCustomersAsync(this HttpResponseMessage response) =>
+        await response.Content.ReadFromJsonAsync<IReadOnlyList<CustomerResponse>>(CancellationToken)
+        ?? throw new InvalidOperationException("Response has no customers.");
 
     public static async Task<CustomerResponse> ReadCustomerAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<CustomerResponse>(CancellationToken)

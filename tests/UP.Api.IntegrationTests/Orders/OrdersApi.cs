@@ -41,6 +41,12 @@ internal static class OrdersApi
         object order) =>
         client.SendOrderRequestAsync(HttpMethod.Post, OrdersRoute, accessToken, order);
 
+    public static Task<HttpResponseMessage> UpdateOrdersAsync(
+        this HttpClient client,
+        string? accessToken,
+        params object[] orders) =>
+        client.SendOrderRequestAsync(HttpMethod.Put, OrdersRoute, accessToken, orders);
+
     public static async Task<HttpResponseMessage> CreateOrderForNewCustomerAsync(
         this HttpClient client,
         string accessToken,

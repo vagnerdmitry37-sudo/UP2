@@ -6,6 +6,8 @@ public interface IOrderService
 {
     Task<OrderResult> CreateAsync(Order order, CancellationToken cancellationToken);
 
+    Task<UpdateOrdersResult> UpdateAsync(IReadOnlyList<Order> orders, CancellationToken cancellationToken);
+
     Task<OrderResult> CreateItemAsync(Guid orderId, OrderItem item, CancellationToken cancellationToken);
 
     Task<OrderResult> UpdateItemAsync(

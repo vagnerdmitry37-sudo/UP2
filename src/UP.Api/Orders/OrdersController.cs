@@ -38,6 +38,43 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
         };
     }
 
+    [HttpPut]
+    [Authorize]
+    [ProducesResponseType<IReadOnlyList<OrderResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<OrderResponse>>> Update(
+        [MinLength(1), MaxLength(MaxOrdersPerRequest)] IReadOnlyList<UpdateOrderRequest> requests,
+        CancellationToken cancellationToken)
+    {
+        if (requests.DistinctBy(request => request.Id).Count() != requests.Count)
+        {
+            ModelState.AddModelError(string.Empty, "Each order can appear only once.");
+            return ValidationProblem(ModelState);
+        }
+
+        UpdateOrdersResult result = await orderService.UpdateAsync(
+            [.. requests.Select(request => request.ToOrder())],
+            cancellationToken);
+
+        if (result.MissingOrderIds.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Orders not found: {string.Join(", ", result.MissingOrderIds)}");
+        }
+
+        if (result.MissingCustomerIds.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Customers not found: {string.Join(", ", result.MissingCustomerIds)}");
+        }
+
+        return Ok(result.Updated.ToResponses());
+    }
+
     [HttpPost(OrderRoutes.Items)]
     [Authorize]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status201Created)]

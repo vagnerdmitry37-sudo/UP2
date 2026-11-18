@@ -36,6 +36,49 @@ public sealed class CustomersController(ICustomerService customerService) : Cont
         return StatusCode(StatusCodes.Status201Created, created.ToResponse());
     }
 
+    [HttpPut]
+    [ProducesResponseType<IReadOnlyList<CustomerResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<IReadOnlyList<CustomerResponse>>> Update(
+        [MinLength(1), MaxLength(MaxCustomersPerRequest)] IReadOnlyList<UpdateCustomerRequest> requests,
+        CancellationToken cancellationToken)
+    {
+        if (requests.DistinctBy(request => request.Id).Count() != requests.Count)
+        {
+            ModelState.AddModelError(string.Empty, "Each customer can appear only once.");
+            return ValidationProblem(ModelState);
+        }
+
+        if (requests.DistinctBy(request => request.Email).Count() != requests.Count)
+        {
+            ModelState.AddModelError(string.Empty, "Each email can appear only once.");
+            return ValidationProblem(ModelState);
+        }
+
+        UpdateCustomersResult result = await customerService.UpdateAsync(
+            [.. requests.Select(request => request.ToCustomer())],
+            cancellationToken);
+
+        if (result.MissingIds.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status404NotFound,
+                detail: $"Customers not found: {string.Join(", ", result.MissingIds)}");
+        }
+
+        if (result.TakenEmails.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                detail: $"Emails already used by other customers: {string.Join(", ", result.TakenEmails)}");
+        }
+
+        return Ok(result.Updated.ToResponses());
+    }
+
     [HttpGet]
     [ProducesResponseType<CustomersPageResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]

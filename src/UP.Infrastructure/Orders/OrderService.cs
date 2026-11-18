@@ -155,6 +155,49 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         return new OrderResult(order);
     }
 
+    public async Task<UpdateOrdersResult> UpdateAsync(
+        IReadOnlyList<Order> orders,
+        CancellationToken cancellationToken)
+    {
+        List<Guid> ids = [.. orders.Select(order => order.Id)];
+        List<Order> existingOrders = await dbContext.Orders
+            .Include(order => order.Items)
+            .Include(order => order.Customer)
+            .Where(order => ids.Contains(order.Id))
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+        List<Guid> missingOrderIds = [.. ids.Except(existingOrders.Select(order => order.Id))];
+
+        if (missingOrderIds.Count > 0)
+        {
+            return new UpdateOrdersResult([], missingOrderIds, []);
+        }
+
+        List<Guid> customerIds = [.. orders.Select(order => order.CustomerId).OfType<Guid>().Distinct()];
+        List<Customer> customers = await dbContext.Customers
+            .Where(customer => customerIds.Contains(customer.Id))
+            .ToListAsync(cancellationToken);
+        List<Guid> missingCustomerIds = [.. customerIds.Except(customers.Select(customer => customer.Id))];
+
+        if (missingCustomerIds.Count > 0)
+        {
+            return new UpdateOrdersResult([], [], missingCustomerIds);
+        }
+
+        foreach (Order existingOrder in existingOrders)
+        {
+            Order order = orders.First(order => order.Id == existingOrder.Id);
+            existingOrder.Customer = customers.First(customer => customer.Id == order.CustomerId);
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new UpdateOrdersResult(
+            [.. ids.Select(id => existingOrders.First(order => order.Id == id))],
+            [],
+            []);
+    }
+
     public Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken) =>
         dbContext.Orders
             .AsNoTracking()

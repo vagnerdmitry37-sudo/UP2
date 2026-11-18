@@ -29,6 +29,48 @@ internal sealed class CustomerService(AppDbContext dbContext, TimeProvider timeP
         return customer;
     }
 
+    public async Task<UpdateCustomersResult> UpdateAsync(
+        IReadOnlyList<Customer> customers,
+        CancellationToken cancellationToken)
+    {
+        List<Guid> ids = [.. customers.Select(customer => customer.Id)];
+        List<Customer> existingCustomers = await dbContext.Customers
+            .Where(customer => ids.Contains(customer.Id))
+            .ToListAsync(cancellationToken);
+        List<Guid> missingIds = [.. ids.Except(existingCustomers.Select(customer => customer.Id))];
+
+        if (missingIds.Count > 0)
+        {
+            return new UpdateCustomersResult([], missingIds, []);
+        }
+
+        List<string> emails = [.. customers.Select(customer => customer.Email)];
+        List<string> takenEmails = await dbContext.Customers
+            .Where(customer => emails.Contains(customer.Email) && !ids.Contains(customer.Id))
+            .Select(customer => customer.Email)
+            .ToListAsync(cancellationToken);
+
+        if (takenEmails.Count > 0)
+        {
+            return new UpdateCustomersResult([], [], takenEmails);
+        }
+
+        foreach (Customer existingCustomer in existingCustomers)
+        {
+            Customer customer = customers.First(customer => customer.Id == existingCustomer.Id);
+            existingCustomer.Name = customer.Name;
+            existingCustomer.Email = customer.Email;
+            existingCustomer.Phone = customer.Phone;
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new UpdateCustomersResult(
+            [.. ids.Select(id => existingCustomers.First(customer => customer.Id == id))],
+            [],
+            []);
+    }
+
     public async Task<CustomersPage> GetAllAsync(
         int first,
         int rows,
