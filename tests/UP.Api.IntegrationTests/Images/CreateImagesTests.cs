@@ -194,6 +194,42 @@ public sealed class CreateImagesTests(ApiFactory factory) : IntegrationTest(fact
     }
 
     [Fact]
+    public async Task Uploaded_image_keeps_original_file_name()
+    {
+        string accessToken = await SignInAsync();
+        Guid productId = await SaveProductAsync();
+
+        HttpResponseMessage response = await Client.CreateNamedImagesAsync(
+            accessToken,
+            productId,
+            ("Charles Bridge.jpg", ImagesApi.NewPhoto()));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Created);
+        ImageResponse image = (await response.ReadImagesAsync()).ShouldHaveSingleItem();
+        image.FileName.ShouldBe("Charles Bridge.jpg");
+        string storedFileName = await QueryDatabaseAsync(db =>
+            db.Images.Where(row => row.Id == image.Id).Select(row => row.FileName).SingleAsync(CancellationToken));
+        storedFileName.ShouldBe("Charles Bridge.jpg");
+    }
+
+    [Fact]
+    public async Task File_name_longer_than_255_characters_is_refused_and_saves_nothing()
+    {
+        string accessToken = await SignInAsync();
+        Guid productId = await SaveProductAsync();
+
+        HttpResponseMessage response = await Client.CreateNamedImagesAsync(
+            accessToken,
+            productId,
+            ($"{new string('a', 252)}.jpg", ImagesApi.NewPhoto()));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        int savedCount = await QueryDatabaseAsync(db => db.Images.CountAsync(CancellationToken));
+        savedCount.ShouldBe(0);
+        (await CountStoredFilesAsync($"Product/{productId}/")).ShouldBe(0);
+    }
+
+    [Fact]
     public async Task File_larger_than_10_mb_is_rejected()
     {
         string accessToken = await SignInAsync();

@@ -7,7 +7,7 @@ public interface IImageService
     Task<CreateImagesResult> CreateAsync(
         ImageEntityType entityType,
         Guid entityId,
-        IReadOnlyList<Stream> files,
+        IReadOnlyList<ImageFile> files,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<PublicImage>> GetAllAsync(

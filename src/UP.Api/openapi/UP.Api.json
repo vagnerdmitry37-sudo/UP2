@@ -3277,6 +3277,7 @@
           "entityType",
           "entityId",
           "sortOrder",
+          "fileName",
           "url"
         ],
         "type": "object",
@@ -3295,6 +3296,9 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "fileName": {
+            "type": "string"
           },
           "url": {
             "type": "string"

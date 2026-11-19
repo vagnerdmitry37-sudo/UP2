@@ -233,6 +233,11 @@ namespace UP.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
                     b.Property<string>("Key")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -573,10 +578,12 @@ namespace UP.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("UP.Domain.Orders.Order", b =>
                 {
-                    b.HasOne("UP.Domain.Customers.Customer", null)
+                    b.HasOne("UP.Domain.Customers.Customer", "Customer")
                         .WithMany("Orders")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("UP.Domain.Orders.OrderItem", b =>

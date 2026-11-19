@@ -25,7 +25,7 @@ internal sealed class ImageService(
     public async Task<CreateImagesResult> CreateAsync(
         ImageEntityType entityType,
         Guid entityId,
-        IReadOnlyList<Stream> files,
+        IReadOnlyList<ImageFile> files,
         CancellationToken cancellationToken)
     {
         if (!await EntityExistsAsync(entityType, entityId, cancellationToken))
@@ -33,12 +33,12 @@ internal sealed class ImageService(
             return new CreateImagesResult(false, [], []);
         }
 
-        List<byte[]> webpFiles = [];
+        List<(string FileName, byte[] Webp)> webpFiles = [];
         List<int> invalidFileIndexes = [];
 
         for (int index = 0; index < files.Count; index++)
         {
-            byte[]? webpFile = ImageEncoder.TryEncodeAsWebp(files[index]);
+            byte[]? webpFile = ImageEncoder.TryEncodeAsWebp(files[index].Content);
 
             if (webpFile is null)
             {
@@ -46,7 +46,7 @@ internal sealed class ImageService(
             }
             else
             {
-                webpFiles.Add(webpFile);
+                webpFiles.Add((files[index].FileName, webpFile));
             }
         }
 
@@ -61,7 +61,7 @@ internal sealed class ImageService(
 
         List<Image> images = [];
 
-        foreach (byte[] webpFile in webpFiles)
+        foreach ((string fileName, byte[] webpFile) in webpFiles)
         {
             Guid imageId = Guid.CreateVersion7();
             var image = new Image
@@ -70,6 +70,7 @@ internal sealed class ImageService(
                 EntityType = entityType,
                 EntityId = entityId,
                 Key = $"{entityType}/{entityId}/{imageId}.webp",
+                FileName = fileName,
                 SortOrder = lastSortOrder + images.Count + 1,
             };
 
@@ -202,5 +203,6 @@ internal sealed class ImageService(
             image.EntityType,
             image.EntityId,
             image.SortOrder,
+            image.FileName,
             $"{_r2.PublicBaseUrl.TrimEnd('/')}/{image.Key}");
 }
