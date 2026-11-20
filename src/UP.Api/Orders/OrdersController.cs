@@ -151,27 +151,6 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
         return Ok(result.Order.ToResponse());
     }
 
-    [HttpGet(OrderRoutes.Items)]
-    [Authorize]
-    [ProducesResponseType<OrderItemsPageResponse>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OrderItemsPageResponse>> GetItems(
-        Guid id,
-        [FromQuery] GetOrderItemsRequest request,
-        CancellationToken cancellationToken)
-    {
-        OrderItemsPage? page = await orderService.GetItemsAsync(id, request.First, request.Rows, cancellationToken);
-
-        if (page is null)
-        {
-            return Problem(statusCode: StatusCodes.Status404NotFound, detail: $"Order {id} not found.");
-        }
-
-        return Ok(page.ToResponse());
-    }
-
     [HttpGet(OrderRoutes.ById)]
     [Authorize]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]

@@ -48,18 +48,20 @@ internal static partial class OrderMapper
     public static partial OrderItem ToOrderItem(this UpdateOrderItemRequest request);
 
     [MapperIgnoreSource(nameof(Order.CustomerId))]
+    [MapProperty(nameof(Order.Items), nameof(OrderResponse.Items), Use = nameof(ToResponsesByStartTime))]
     public static partial OrderResponse ToResponse(this Order order);
 
     public static partial IReadOnlyList<OrderResponse> ToResponses(this IReadOnlyList<Order> orders);
 
     public static partial OrdersPageResponse ToResponse(this OrdersPage page);
 
-    public static partial OrderItemsPageResponse ToResponse(this OrderItemsPage page);
-
     [MapperIgnoreSource(nameof(OrderItem.OrderId))]
     [MapProperty(nameof(OrderItem.ProductAttributes), nameof(OrderItemResponse.ProductAttributes), Use = nameof(ParseAttributes))]
     [MapProperty(nameof(OrderItem.ProductType), nameof(OrderItemResponse.ProductTypeLabel), Use = nameof(TypeLabelOf))]
     public static partial OrderItemResponse ToResponse(this OrderItem item);
+
+    private static IReadOnlyList<OrderItemResponse> ToResponsesByStartTime(List<OrderItem> items) =>
+        [.. items.OrderBy(item => item.StartsAt).ThenBy(item => item.Id).Select(item => item.ToResponse())];
 
     private static JsonElement ParseAttributes(string attributes) => JsonSerializer.Deserialize<JsonElement>(attributes);
 

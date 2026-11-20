@@ -251,31 +251,6 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         return new OrdersPage(items, totalRecords);
     }
 
-    public async Task<OrderItemsPage?> GetItemsAsync(
-        Guid orderId,
-        int first,
-        int rows,
-        CancellationToken cancellationToken)
-    {
-        bool orderExists = await dbContext.Orders.AnyAsync(order => order.Id == orderId, cancellationToken);
-        if (!orderExists)
-        {
-            return null;
-        }
-
-        IQueryable<OrderItem> orderItems = dbContext.Set<OrderItem>().Where(item => item.OrderId == orderId);
-        int totalRecords = await orderItems.CountAsync(cancellationToken);
-        List<OrderItem> items = await orderItems
-            .AsNoTracking()
-            .OrderBy(item => item.StartsAt)
-            .ThenBy(item => item.Id)
-            .Skip(first)
-            .Take(rows)
-            .ToListAsync(cancellationToken);
-
-        return new OrderItemsPage(items, totalRecords);
-    }
-
     public async Task<IReadOnlyList<Guid>> DeleteAsync(
         IReadOnlyList<Guid> ids,
         CancellationToken cancellationToken)

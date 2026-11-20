@@ -20,12 +20,6 @@ public interface IOrderService
         IReadOnlyList<Guid> itemIds,
         CancellationToken cancellationToken);
 
-    Task<OrderItemsPage?> GetItemsAsync(
-        Guid orderId,
-        int first,
-        int rows,
-        CancellationToken cancellationToken);
-
     Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Order>> GetByIdsAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);

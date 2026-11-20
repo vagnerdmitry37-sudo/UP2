@@ -33,6 +33,25 @@ public sealed class GetOrderTests(ApiFactory factory) : IntegrationTest(factory)
     }
 
     [Fact]
+    public async Task Order_items_are_returned_by_start_time()
+    {
+        Guid productId = await SeedProductAsync();
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
+        HttpResponseMessage created = await Client.CreateOrderForNewCustomerAsync(
+            accessToken,
+            OrdersApi.NewItem(productId, passengers: 3, startsAt: now.AddDays(3)),
+            OrdersApi.NewItem(productId, passengers: 1, startsAt: now.AddDays(1)),
+            OrdersApi.NewItem(productId, passengers: 2, startsAt: now.AddDays(2)));
+        created.EnsureSuccessStatusCode();
+
+        HttpResponseMessage response = await Client.GetOrderAsync((await created.ReadOrderAsync()).Id, accessToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await response.ReadOrderAsync()).Items.Select(item => item.Passengers).ShouldBe([1, 2, 3]);
+    }
+
+    [Fact]
     public async Task Order_is_returned_with_its_customer()
     {
         OrderResponse created = await CreateOrderAsync(await SeedProductAsync());

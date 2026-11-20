@@ -1,0 +1,19 @@
+#!/bin/sh
+
+api_files_staged=$(git diff --cached --name-only --diff-filter=ACMRD -- src tests UP.slnx global.json Directory.Build.props Directory.Packages.props .editorconfig)
+
+if [ -z "$api_files_staged" ]; then
+  exit 0
+fi
+
+if ! docker info >/dev/null 2>&1; then
+  echo "pre-commit: Docker is not running. Start Docker so the integration tests can run, then commit again." >&2
+  exit 1
+fi
+
+echo "pre-commit: running API integration tests..."
+
+if ! dotnet test --solution UP.slnx --artifacts-path artifacts/test; then
+  echo "pre-commit: integration tests failed, commit aborted." >&2
+  exit 1
+fi
