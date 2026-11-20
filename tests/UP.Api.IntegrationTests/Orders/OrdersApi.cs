@@ -93,13 +93,22 @@ internal static class OrdersApi
         string? accessToken) =>
         client.SendOrderRequestAsync(HttpMethod.Post, $"{OrdersRoute}/{orderId}/items", accessToken, item);
 
-    public static Task<HttpResponseMessage> UpdateOrderItemAsync(
+    public static Task<HttpResponseMessage> UpdateOrderItemsAsync(
         this HttpClient client,
         Guid orderId,
-        Guid itemId,
-        object item,
-        string? accessToken) =>
-        client.SendOrderRequestAsync(HttpMethod.Put, $"{OrdersRoute}/{orderId}/items/{itemId}", accessToken, item);
+        string? accessToken,
+        params object[] items) =>
+        client.SendOrderRequestAsync(HttpMethod.Put, $"{OrdersRoute}/{orderId}/items", accessToken, items);
+
+    public static Task<HttpResponseMessage> GetOrderItemsAsync(
+        this HttpClient client,
+        Guid orderId,
+        string? accessToken,
+        string query = "") =>
+        client.SendOrderRequestAsync(
+            HttpMethod.Get,
+            query.Length == 0 ? $"{OrdersRoute}/{orderId}/items" : $"{OrdersRoute}/{orderId}/items?{query}",
+            accessToken);
 
     public static Task<HttpResponseMessage> DeleteOrderItemsAsync(
         this HttpClient client,
@@ -118,6 +127,14 @@ internal static class OrdersApi
     public static async Task<IReadOnlyList<OrderResponse>> ReadOrdersAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<IReadOnlyList<OrderResponse>>(JsonOptions, CancellationToken)
         ?? throw new InvalidOperationException("Response has no orders.");
+
+    public static async Task<OrderItemResponse> ReadOrderItemAsync(this HttpResponseMessage response) =>
+        await response.Content.ReadFromJsonAsync<OrderItemResponse>(JsonOptions, CancellationToken)
+        ?? throw new InvalidOperationException("Response has no order item.");
+
+    public static async Task<OrderItemsPageResponse> ReadOrderItemsPageAsync(this HttpResponseMessage response) =>
+        await response.Content.ReadFromJsonAsync<OrderItemsPageResponse>(JsonOptions, CancellationToken)
+        ?? throw new InvalidOperationException("Response has no order items page.");
 
     public static async Task<OrdersPageResponse> ReadOrdersPageAsync(this HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<OrdersPageResponse>(JsonOptions, CancellationToken)

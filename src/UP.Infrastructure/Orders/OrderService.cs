@@ -52,22 +52,24 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         return new OrderResult(order);
     }
 
-    public async Task<OrderResult> CreateItemAsync(Guid orderId, OrderItem item, CancellationToken cancellationToken)
+    public async Task<OrderItemResult> CreateItemAsync(
+        Guid orderId,
+        OrderItem item,
+        CancellationToken cancellationToken)
     {
         Order? order = await dbContext.Orders
             .Include(order => order.Items)
-            .Include(order => order.Customer)
             .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
 
         if (order is null)
         {
-            return new OrderResult(null, OrderError.OrderNotFound, $"Order {orderId} not found.");
+            return new OrderItemResult(null, OrderError.OrderNotFound, $"Order {orderId} not found.");
         }
 
         OrderResult? itemError = await PrepareItemsAsync([item], timeProvider.GetUtcNow(), cancellationToken);
         if (itemError is not null)
         {
-            return itemError;
+            return new OrderItemResult(null, itemError.Error, itemError.ErrorDetail);
         }
 
         order.Items.Add(item);
@@ -75,13 +77,12 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        return new OrderResult(order);
+        return new OrderItemResult(item);
     }
 
-    public async Task<OrderResult> UpdateItemAsync(
+    public async Task<OrderResult> UpdateItemsAsync(
         Guid orderId,
-        Guid itemId,
-        OrderItem item,
+        IReadOnlyList<OrderItem> items,
         CancellationToken cancellationToken)
     {
         Order? order = await dbContext.Orders
@@ -94,28 +95,41 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
             return new OrderResult(null, OrderError.OrderNotFound, $"Order {orderId} not found.");
         }
 
-        OrderItem? existingItem = order.Items.Find(orderItem => orderItem.Id == itemId);
-        if (existingItem is null)
+        List<Guid> missingIds = [.. items
+            .Select(item => item.Id)
+            .Where(id => !order.Items.Exists(orderItem => orderItem.Id == id))];
+        if (missingIds.Count > 0)
         {
-            return new OrderResult(null, OrderError.ItemNotFound, $"Order item {itemId} not found.");
+            return new OrderResult(
+                null,
+                OrderError.ItemNotFound,
+                $"Order items not found: {string.Join(", ", missingIds)}");
         }
 
-        OrderResult? itemError = await PrepareItemsAsync([item], timeProvider.GetUtcNow(), cancellationToken);
+        List<OrderItem> existingItems = [.. items.Select(item => order.Items.First(orderItem => orderItem.Id == item.Id))];
+
+        OrderResult? itemError = await PrepareItemsAsync([.. items], timeProvider.GetUtcNow(), cancellationToken);
         if (itemError is not null)
         {
             return itemError;
         }
 
-        existingItem.ProductId = item.ProductId;
-        existingItem.ProductType = item.ProductType;
-        existingItem.ProductName = item.ProductName;
-        existingItem.ProductAttributes = item.ProductAttributes;
-        existingItem.UnitPrice = item.UnitPrice;
-        existingItem.StartsAt = item.StartsAt;
-        existingItem.Passengers = item.Passengers;
-        existingItem.PickupAddress = item.PickupAddress;
-        existingItem.Notes = item.Notes;
-        existingItem.TotalPrice = item.TotalPrice;
+        for (int index = 0; index < items.Count; index++)
+        {
+            OrderItem item = items[index];
+            OrderItem existingItem = existingItems[index];
+            existingItem.ProductId = item.ProductId;
+            existingItem.ProductType = item.ProductType;
+            existingItem.ProductName = item.ProductName;
+            existingItem.ProductAttributes = item.ProductAttributes;
+            existingItem.UnitPrice = item.UnitPrice;
+            existingItem.StartsAt = item.StartsAt;
+            existingItem.Passengers = item.Passengers;
+            existingItem.PickupAddress = item.PickupAddress;
+            existingItem.Notes = item.Notes;
+            existingItem.TotalPrice = item.TotalPrice;
+        }
+
         order.TotalPrice = order.Items.Sum(orderItem => orderItem.TotalPrice);
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -235,6 +249,31 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
             .ToListAsync(cancellationToken);
 
         return new OrdersPage(items, totalRecords);
+    }
+
+    public async Task<OrderItemsPage?> GetItemsAsync(
+        Guid orderId,
+        int first,
+        int rows,
+        CancellationToken cancellationToken)
+    {
+        bool orderExists = await dbContext.Orders.AnyAsync(order => order.Id == orderId, cancellationToken);
+        if (!orderExists)
+        {
+            return null;
+        }
+
+        IQueryable<OrderItem> orderItems = dbContext.Set<OrderItem>().Where(item => item.OrderId == orderId);
+        int totalRecords = await orderItems.CountAsync(cancellationToken);
+        List<OrderItem> items = await orderItems
+            .AsNoTracking()
+            .OrderBy(item => item.StartsAt)
+            .ThenBy(item => item.Id)
+            .Skip(first)
+            .Take(rows)
+            .ToListAsync(cancellationToken);
+
+        return new OrderItemsPage(items, totalRecords);
     }
 
     public async Task<IReadOnlyList<Guid>> DeleteAsync(

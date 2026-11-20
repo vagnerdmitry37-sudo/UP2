@@ -8,17 +8,22 @@ public interface IOrderService
 
     Task<UpdateOrdersResult> UpdateAsync(IReadOnlyList<Order> orders, CancellationToken cancellationToken);
 
-    Task<OrderResult> CreateItemAsync(Guid orderId, OrderItem item, CancellationToken cancellationToken);
+    Task<OrderItemResult> CreateItemAsync(Guid orderId, OrderItem item, CancellationToken cancellationToken);
 
-    Task<OrderResult> UpdateItemAsync(
+    Task<OrderResult> UpdateItemsAsync(
         Guid orderId,
-        Guid itemId,
-        OrderItem item,
+        IReadOnlyList<OrderItem> items,
         CancellationToken cancellationToken);
 
     Task<OrderResult> DeleteItemsAsync(
         Guid orderId,
         IReadOnlyList<Guid> itemIds,
+        CancellationToken cancellationToken);
+
+    Task<OrderItemsPage?> GetItemsAsync(
+        Guid orderId,
+        int first,
+        int rows,
         CancellationToken cancellationToken);
 
     Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken);

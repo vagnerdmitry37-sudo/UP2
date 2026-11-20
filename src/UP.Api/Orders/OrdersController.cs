@@ -77,20 +77,20 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
 
     [HttpPost(OrderRoutes.Items)]
     [Authorize]
-    [ProducesResponseType<OrderResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<OrderItemResponse>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OrderResponse>> CreateItem(
+    public async Task<ActionResult<OrderItemResponse>> CreateItem(
         Guid id,
         CreateOrderItemRequest request,
         CancellationToken cancellationToken)
     {
-        OrderResult result = await orderService.CreateItemAsync(id, request.ToOrderItem(), cancellationToken);
+        OrderItemResult result = await orderService.CreateItemAsync(id, request.ToOrderItem(), cancellationToken);
 
         return result switch
         {
-            { Order: not null } => StatusCode(StatusCodes.Status201Created, result.Order.ToResponse()),
+            { Item: not null } => StatusCode(StatusCodes.Status201Created, result.Item.ToResponse()),
             { Error: OrderError.OrderNotFound or OrderError.ProductNotFound } => Problem(
                 statusCode: StatusCodes.Status404NotFound,
                 detail: result.ErrorDetail),
@@ -98,22 +98,26 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
         };
     }
 
-    [HttpPut(OrderRoutes.ItemById)]
+    [HttpPut(OrderRoutes.Items)]
     [Authorize]
     [ProducesResponseType<OrderResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<OrderResponse>> UpdateItem(
+    public async Task<ActionResult<OrderResponse>> UpdateItems(
         Guid id,
-        Guid itemId,
-        UpdateOrderItemRequest request,
+        [MinLength(1), MaxLength(MaxOrderItemsPerRequest)] IReadOnlyList<UpdateOrderItemRequest> requests,
         CancellationToken cancellationToken)
     {
-        OrderResult result = await orderService.UpdateItemAsync(
+        if (requests.DistinctBy(request => request.Id).Count() != requests.Count)
+        {
+            ModelState.AddModelError(string.Empty, "Each order item can appear only once.");
+            return ValidationProblem(ModelState);
+        }
+
+        OrderResult result = await orderService.UpdateItemsAsync(
             id,
-            itemId,
-            request.ToOrderItem(),
+            [.. requests.Select(request => request.ToOrderItem())],
             cancellationToken);
 
         return result switch
@@ -145,6 +149,27 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
         }
 
         return Ok(result.Order.ToResponse());
+    }
+
+    [HttpGet(OrderRoutes.Items)]
+    [Authorize]
+    [ProducesResponseType<OrderItemsPageResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<OrderItemsPageResponse>> GetItems(
+        Guid id,
+        [FromQuery] GetOrderItemsRequest request,
+        CancellationToken cancellationToken)
+    {
+        OrderItemsPage? page = await orderService.GetItemsAsync(id, request.First, request.Rows, cancellationToken);
+
+        if (page is null)
+        {
+            return Problem(statusCode: StatusCodes.Status404NotFound, detail: $"Order {id} not found.");
+        }
+
+        return Ok(page.ToResponse());
     }
 
     [HttpGet(OrderRoutes.ById)]

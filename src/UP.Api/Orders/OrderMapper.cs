@@ -39,7 +39,6 @@ internal static partial class OrderMapper
     [MapperIgnoreTarget(nameof(OrderItem.TotalPrice))]
     public static partial OrderItem ToOrderItem(this CreateOrderItemRequest request);
 
-    [MapperIgnoreTarget(nameof(OrderItem.Id))]
     [MapperIgnoreTarget(nameof(OrderItem.OrderId))]
     [MapperIgnoreTarget(nameof(OrderItem.ProductType))]
     [MapperIgnoreTarget(nameof(OrderItem.ProductName))]
@@ -55,10 +54,12 @@ internal static partial class OrderMapper
 
     public static partial OrdersPageResponse ToResponse(this OrdersPage page);
 
+    public static partial OrderItemsPageResponse ToResponse(this OrderItemsPage page);
+
     [MapperIgnoreSource(nameof(OrderItem.OrderId))]
     [MapProperty(nameof(OrderItem.ProductAttributes), nameof(OrderItemResponse.ProductAttributes), Use = nameof(ParseAttributes))]
     [MapProperty(nameof(OrderItem.ProductType), nameof(OrderItemResponse.ProductTypeLabel), Use = nameof(TypeLabelOf))]
-    private static partial OrderItemResponse ToItemResponse(OrderItem item);
+    public static partial OrderItemResponse ToResponse(this OrderItem item);
 
     private static JsonElement ParseAttributes(string attributes) => JsonSerializer.Deserialize<JsonElement>(attributes);
 
