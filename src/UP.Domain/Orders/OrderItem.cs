@@ -14,8 +14,6 @@ public sealed class OrderItem
 
     public string ProductName { get; set; } = string.Empty;
 
-    public string ProductAttributes { get; set; } = "{}";
-
     public decimal UnitPrice { get; set; }
 
     public DateTimeOffset StartsAt { get; set; }

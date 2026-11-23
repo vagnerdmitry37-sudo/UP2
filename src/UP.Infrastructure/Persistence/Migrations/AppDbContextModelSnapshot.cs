@@ -316,10 +316,6 @@ namespace UP.Infrastructure.Persistence.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
-                    b.Property<string>("ProductAttributes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
@@ -359,10 +355,6 @@ namespace UP.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("Attributes")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
 
                     b.Property<string>("Name")
                         .IsRequired()

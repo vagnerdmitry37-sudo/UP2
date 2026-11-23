@@ -143,7 +143,6 @@ public sealed class UpdateOrderItemsTests(ApiFactory factory) : IntegrationTest(
             Type = type,
             Name = $"{type} product",
             SeoDescription = "Seeded for an order test",
-            Attributes = "{}",
             Price = price,
         };
         await QueryDatabaseAsync(db =>

@@ -83,7 +83,6 @@ public sealed class DeleteOrdersTests(ApiFactory factory) : IntegrationTest(fact
             Type = ProductType.GroupExcursion,
             Name = "Day trip to Bamberg",
             SeoDescription = "Seeded for an order test",
-            Attributes = """{"durationMinutes":360,"meetingPoint":"Hotel Pupp"}""",
             Price = 40m,
         };
         await QueryDatabaseAsync(db =>

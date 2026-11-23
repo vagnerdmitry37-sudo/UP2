@@ -1,12 +1,9 @@
-using System.Text.Json;
-
 using Riok.Mapperly.Abstractions;
 
 using UP.Api.Customers;
 using UP.Application.Orders;
 using UP.Domain.Orders;
 using UP.Domain.Products;
-using UP.Domain.ProductTypes;
 
 namespace UP.Api.Orders;
 
@@ -34,7 +31,6 @@ internal static partial class OrderMapper
     [MapperIgnoreTarget(nameof(OrderItem.OrderId))]
     [MapperIgnoreTarget(nameof(OrderItem.ProductType))]
     [MapperIgnoreTarget(nameof(OrderItem.ProductName))]
-    [MapperIgnoreTarget(nameof(OrderItem.ProductAttributes))]
     [MapperIgnoreTarget(nameof(OrderItem.UnitPrice))]
     [MapperIgnoreTarget(nameof(OrderItem.TotalPrice))]
     public static partial OrderItem ToOrderItem(this CreateOrderItemRequest request);
@@ -42,7 +38,6 @@ internal static partial class OrderMapper
     [MapperIgnoreTarget(nameof(OrderItem.OrderId))]
     [MapperIgnoreTarget(nameof(OrderItem.ProductType))]
     [MapperIgnoreTarget(nameof(OrderItem.ProductName))]
-    [MapperIgnoreTarget(nameof(OrderItem.ProductAttributes))]
     [MapperIgnoreTarget(nameof(OrderItem.UnitPrice))]
     [MapperIgnoreTarget(nameof(OrderItem.TotalPrice))]
     public static partial OrderItem ToOrderItem(this UpdateOrderItemRequest request);
@@ -56,14 +51,8 @@ internal static partial class OrderMapper
     public static partial OrdersPageResponse ToResponse(this OrdersPage page);
 
     [MapperIgnoreSource(nameof(OrderItem.OrderId))]
-    [MapProperty(nameof(OrderItem.ProductAttributes), nameof(OrderItemResponse.ProductAttributes), Use = nameof(ParseAttributes))]
-    [MapProperty(nameof(OrderItem.ProductType), nameof(OrderItemResponse.ProductTypeLabel), Use = nameof(TypeLabelOf))]
     public static partial OrderItemResponse ToResponse(this OrderItem item);
 
     private static IReadOnlyList<OrderItemResponse> ToResponsesByStartTime(List<OrderItem> items) =>
         [.. items.OrderBy(item => item.StartsAt).ThenBy(item => item.Id).Select(item => item.ToResponse())];
-
-    private static JsonElement ParseAttributes(string attributes) => JsonSerializer.Deserialize<JsonElement>(attributes);
-
-    private static string TypeLabelOf(ProductType type) => ProductTypeCatalog.For(type).Label;
 }

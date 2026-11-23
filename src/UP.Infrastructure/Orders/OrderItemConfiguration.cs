@@ -31,10 +31,6 @@ internal sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderIte
             .HasMaxLength(ProductNameMaxLength)
             .IsRequired();
 
-        builder.Property(item => item.ProductAttributes)
-            .HasColumnType("jsonb")
-            .IsRequired();
-
         builder.Property(item => item.UnitPrice)
             .HasPrecision(PricePrecision, PriceScale);
 

@@ -41,10 +41,6 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(product => product.Price)
             .HasPrecision(PricePrecision, PriceScale);
 
-        builder.Property(product => product.Attributes)
-            .HasColumnType("jsonb")
-            .IsRequired();
-
         builder.HasIndex(product => product.Type);
     }
 }

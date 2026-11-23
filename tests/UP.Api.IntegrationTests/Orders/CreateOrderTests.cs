@@ -15,16 +15,12 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
 {
     private const string Email = "seller@example.com";
     private const string Password = "correct-horse-battery";
-    private const string ExcursionAttributes = """{"durationMinutes":360,"meetingPoint":"Hotel Pupp"}""";
 
     [Fact]
     public async Task Order_is_priced_per_person_or_per_booking_by_product_type_and_keeps_product_snapshot()
     {
-        Product excursion = await SeedProductAsync(ProductType.GroupExcursion, 40m, ExcursionAttributes);
-        Product transfer = await SeedProductAsync(
-            ProductType.IndividualTransfer,
-            100m,
-            """{"from":"Airport","to":"Hotel","maxPassengers":4}""");
+        Product excursion = await SeedProductAsync(ProductType.GroupExcursion, 40m);
+        Product transfer = await SeedProductAsync(ProductType.IndividualTransfer, 100m);
 
         HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(
             await SignInAsync(),
@@ -39,7 +35,6 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
         order.TotalPrice.ShouldBe(220m);
         order.Items[0].ProductName.ShouldBe(excursion.Name);
         order.Items[0].UnitPrice.ShouldBe(40m);
-        order.Items[1].ProductAttributes.GetProperty("maxPassengers").GetInt32().ShouldBe(4);
     }
 
     [Fact]
@@ -65,7 +60,7 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
     [Fact]
     public async Task Each_order_gets_its_own_number()
     {
-        Product product = await SeedProductAsync(ProductType.GroupExcursion, 40m, ExcursionAttributes);
+        Product product = await SeedProductAsync(ProductType.GroupExcursion, 40m);
 
         OrderResponse first = await CreateOrderAsync(product.Id);
         OrderResponse second = await CreateOrderAsync(product.Id);
@@ -100,7 +95,7 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
     [Fact]
     public async Task Start_in_the_past_is_refused_and_saves_nothing()
     {
-        Product product = await SeedProductAsync(ProductType.GroupExcursion, 40m, ExcursionAttributes);
+        Product product = await SeedProductAsync(ProductType.GroupExcursion, 40m);
 
         HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(
             await SignInAsync(),
@@ -121,22 +116,6 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
         (await CountOrdersAsync()).ShouldBe(0);
     }
 
-    [Fact]
-    public async Task More_passengers_than_product_allows_are_refused_and_save_nothing()
-    {
-        Product product = await SeedProductAsync(
-            ProductType.IndividualExcursion,
-            300m,
-            """{"durationMinutes":240,"maxPassengers":4}""");
-
-        HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(
-            await SignInAsync(),
-            OrdersApi.NewItem(product.Id, passengers: 5));
-
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        (await CountOrdersAsync()).ShouldBe(0);
-    }
-
     private async Task<OrderResponse> CreateOrderAsync(Guid productId)
     {
         HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(
@@ -149,7 +128,7 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
     private async Task<string> SignInAsync() =>
         (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
 
-    private async Task<Product> SeedProductAsync(ProductType type, decimal price, string attributes)
+    private async Task<Product> SeedProductAsync(ProductType type, decimal price)
     {
         var product = new Product
         {
@@ -157,7 +136,6 @@ public sealed class CreateOrderTests(ApiFactory factory) : IntegrationTest(facto
             Type = type,
             Name = $"{type} product",
             SeoDescription = "Seeded for an order test",
-            Attributes = attributes,
             Price = price,
         };
         await QueryDatabaseAsync(db =>

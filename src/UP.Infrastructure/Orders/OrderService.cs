@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text.Json;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -13,8 +12,6 @@ namespace UP.Infrastructure.Orders;
 
 internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProvider) : IOrderService
 {
-    private const string MaxPassengersAttribute = "maxPassengers";
-
     private const string NextNumberSql =
         "SELECT nextval('\"" + OrderConfiguration.NumberSequenceName + "\"') AS \"Value\"";
 
@@ -121,7 +118,6 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
             existingItem.ProductId = item.ProductId;
             existingItem.ProductType = item.ProductType;
             existingItem.ProductName = item.ProductName;
-            existingItem.ProductAttributes = item.ProductAttributes;
             existingItem.UnitPrice = item.UnitPrice;
             existingItem.StartsAt = item.StartsAt;
             existingItem.Passengers = item.Passengers;
@@ -303,35 +299,14 @@ internal sealed class OrderService(AppDbContext dbContext, TimeProvider timeProv
         foreach (OrderItem item in items)
         {
             Product product = products[item.ProductId];
-            int? maxPassengers = MaxPassengersOf(product);
-
-            if (item.Passengers > maxPassengers)
-            {
-                return new OrderResult(
-                    null,
-                    OrderError.TooManyPassengers,
-                    $"Product {product.Id} allows at most {maxPassengers} passengers.");
-            }
-
             item.Id = Guid.CreateVersion7();
             item.ProductType = product.Type;
             item.ProductName = product.Name;
-            item.ProductAttributes = product.Attributes;
             item.UnitPrice = product.Price;
             item.StartsAt = item.StartsAt.ToUniversalTime();
             item.TotalPrice = OrderItemPricing.TotalPrice(product.Type, product.Price, item.Passengers);
         }
 
         return null;
-    }
-
-    private static int? MaxPassengersOf(Product product)
-    {
-        using JsonDocument attributes = JsonDocument.Parse(product.Attributes);
-
-        return attributes.RootElement.TryGetProperty(MaxPassengersAttribute, out JsonElement value)
-            && value.TryGetInt32(out int maxPassengers)
-                ? maxPassengers
-                : null;
     }
 }

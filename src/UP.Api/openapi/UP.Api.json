@@ -121,44 +121,6 @@
         }
       }
     },
-    "/api/product-types": {
-      "get": {
-        "tags": [
-          "ProductTypes"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProductTypeResponse"
-                  }
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProductTypeResponse"
-                  }
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ProductTypeResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/products": {
       "post": {
         "tags": [
@@ -3019,51 +2981,6 @@
           }
         }
       },
-      "AttributeDefinitionResponse": {
-        "required": [
-          "key",
-          "label",
-          "kind",
-          "required",
-          "maxLength",
-          "min"
-        ],
-        "type": "object",
-        "properties": {
-          "key": {
-            "type": "string"
-          },
-          "label": {
-            "type": "string"
-          },
-          "kind": {
-            "$ref": "#/components/schemas/AttributeKind"
-          },
-          "required": {
-            "type": "boolean"
-          },
-          "maxLength": {
-            "type": [
-              "null",
-              "integer"
-            ],
-            "format": "int32"
-          },
-          "min": {
-            "type": [
-              "null",
-              "integer"
-            ],
-            "format": "int32"
-          }
-        }
-      },
-      "AttributeKind": {
-        "enum": [
-          "Text",
-          "WholeNumber"
-        ]
-      },
       "CreateCustomerRequest": {
         "required": [
           "name",
@@ -3137,8 +3054,7 @@
           "type",
           "name",
           "seoDescription",
-          "price",
-          "attributes"
+          "price"
         ],
         "type": "object",
         "properties": {
@@ -3154,9 +3070,6 @@
           "price": {
             "type": "number",
             "format": "double"
-          },
-          "attributes": {
-            "$ref": "#/components/schemas/JsonElement"
           },
           "shortDescription": {
             "type": "string",
@@ -3341,9 +3254,7 @@
           "id",
           "productId",
           "productType",
-          "productTypeLabel",
           "productName",
-          "productAttributes",
           "unitPrice",
           "startsAt",
           "passengers",
@@ -3364,14 +3275,8 @@
           "productType": {
             "$ref": "#/components/schemas/ProductType"
           },
-          "productTypeLabel": {
-            "type": "string"
-          },
           "productName": {
             "type": "string"
-          },
-          "productAttributes": {
-            "$ref": "#/components/schemas/JsonElement"
           },
           "unitPrice": {
             "type": "number",
@@ -3512,12 +3417,10 @@
         "required": [
           "id",
           "type",
-          "typeLabel",
           "name",
           "seoDescription",
           "shortDescription",
           "price",
-          "attributes",
           "images"
         ],
         "type": "object",
@@ -3528,9 +3431,6 @@
           },
           "type": {
             "$ref": "#/components/schemas/ProductType"
-          },
-          "typeLabel": {
-            "type": "string"
           },
           "name": {
             "type": "string"
@@ -3544,9 +3444,6 @@
           "price": {
             "type": "number",
             "format": "double"
-          },
-          "attributes": {
-            "$ref": "#/components/schemas/JsonElement"
           },
           "images": {
             "type": "array",
@@ -3560,12 +3457,10 @@
         "required": [
           "id",
           "type",
-          "typeLabel",
           "name",
           "seoDescription",
           "shortDescription",
-          "price",
-          "attributes"
+          "price"
         ],
         "type": "object",
         "properties": {
@@ -3575,9 +3470,6 @@
           },
           "type": {
             "$ref": "#/components/schemas/ProductType"
-          },
-          "typeLabel": {
-            "type": "string"
           },
           "name": {
             "type": "string"
@@ -3591,9 +3483,6 @@
           "price": {
             "type": "number",
             "format": "double"
-          },
-          "attributes": {
-            "$ref": "#/components/schemas/JsonElement"
           }
         }
       },
@@ -3631,32 +3520,6 @@
           "IndividualTransfer",
           "GroupTransfer"
         ]
-      },
-      "ProductTypeResponse": {
-        "required": [
-          "type",
-          "label",
-          "priceLabel",
-          "attributes"
-        ],
-        "type": "object",
-        "properties": {
-          "type": {
-            "$ref": "#/components/schemas/ProductType"
-          },
-          "label": {
-            "type": "string"
-          },
-          "priceLabel": {
-            "type": "string"
-          },
-          "attributes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AttributeDefinitionResponse"
-            }
-          }
-        }
       },
       "RegisterRequest": {
         "required": [
@@ -3779,8 +3642,7 @@
           "type",
           "name",
           "seoDescription",
-          "price",
-          "attributes"
+          "price"
         ],
         "type": "object",
         "properties": {
@@ -3800,9 +3662,6 @@
           "price": {
             "type": "number",
             "format": "double"
-          },
-          "attributes": {
-            "$ref": "#/components/schemas/JsonElement"
           },
           "shortDescription": {
             "type": "string",
@@ -3882,9 +3741,6 @@
   "tags": [
     {
       "name": "UserProfile"
-    },
-    {
-      "name": "ProductTypes"
     },
     {
       "name": "Products"
