@@ -12,7 +12,6 @@ public sealed record ProductDetailsResponse(
     string Name,
     string SeoDescription,
     string ShortDescription,
-    string Description,
     decimal Price,
     JsonElement Attributes,
     IReadOnlyList<ImageResponse> Images);

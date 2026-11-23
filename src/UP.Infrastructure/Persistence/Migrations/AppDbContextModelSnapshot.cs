@@ -364,11 +364,6 @@ namespace UP.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(20000)
-                        .HasColumnType("character varying(20000)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
