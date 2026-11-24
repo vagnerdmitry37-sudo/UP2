@@ -100,17 +100,25 @@ public sealed class ProductsController(IProductService productService) : Control
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Delete(
         [FromQuery, Required, MinLength(1), MaxLength(MaxProductsPerRequest)] Guid[] ids,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<Guid> missingIds = await productService.DeleteAsync([.. ids.Distinct()], cancellationToken);
+        DeleteProductsResult result = await productService.DeleteAsync([.. ids.Distinct()], cancellationToken);
 
-        if (missingIds.Count > 0)
+        if (result.MissingIds.Count > 0)
         {
             return Problem(
                 statusCode: StatusCodes.Status404NotFound,
-                detail: $"Products not found: {string.Join(", ", missingIds)}");
+                detail: $"Products not found: {string.Join(", ", result.MissingIds)}");
+        }
+
+        if (result.IdsInOrders.Count > 0)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                detail: $"Products are used in orders: {string.Join(", ", result.IdsInOrders)}");
         }
 
         return NoContent();

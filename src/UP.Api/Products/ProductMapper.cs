@@ -1,10 +1,7 @@
-using System.Text.Json;
-
 using Riok.Mapperly.Abstractions;
 
 using UP.Application.Products;
 using UP.Domain.Products;
-using UP.Domain.ProductTypes;
 
 namespace UP.Api.Products;
 
@@ -16,21 +13,11 @@ internal static partial class ProductMapper
 
     public static partial Product ToProduct(this UpdateProductRequest request);
 
-    [MapProperty(nameof(Product.Attributes), nameof(ProductResponse.Attributes), Use = nameof(ParseAttributes))]
-    [MapProperty(nameof(Product.Type), nameof(ProductResponse.TypeLabel), Use = nameof(TypeLabelOf))]
     public static partial ProductResponse ToResponse(this Product product);
 
     public static partial IReadOnlyList<ProductResponse> ToResponses(this IReadOnlyList<Product> products);
 
     [MapNestedProperties(nameof(ProductDetails.Product))]
-    [MapProperty(
-        [nameof(ProductDetails.Product), nameof(Product.Attributes)],
-        nameof(ProductDetailsResponse.Attributes),
-        Use = nameof(ParseAttributes))]
-    [MapProperty(
-        [nameof(ProductDetails.Product), nameof(Product.Type)],
-        nameof(ProductDetailsResponse.TypeLabel),
-        Use = nameof(TypeLabelOf))]
     public static partial ProductDetailsResponse ToResponse(this ProductDetails details);
 
     public static partial IReadOnlyList<ProductDetailsResponse> ToResponses(this IReadOnlyList<ProductDetails> products);
@@ -38,8 +25,4 @@ internal static partial class ProductMapper
     public static partial ProductsQuery ToQuery(this GetProductsRequest request);
 
     public static partial ProductsPageResponse ToResponse(this ProductsPage page);
-
-    private static JsonElement ParseAttributes(string attributes) => JsonSerializer.Deserialize<JsonElement>(attributes);
-
-    private static string TypeLabelOf(ProductType type) => ProductTypeCatalog.For(type).Label;
 }

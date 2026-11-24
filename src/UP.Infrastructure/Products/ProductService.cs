@@ -100,7 +100,7 @@ internal sealed class ProductService(AppDbContext dbContext, IImageService image
         return new UpdateProductsResult(products, []);
     }
 
-    public async Task<IReadOnlyList<Guid>> DeleteAsync(
+    public async Task<DeleteProductsResult> DeleteAsync(
         IReadOnlyList<Guid> ids,
         CancellationToken cancellationToken)
     {
@@ -111,7 +111,19 @@ internal sealed class ProductService(AppDbContext dbContext, IImageService image
 
         if (missingIds.Count > 0)
         {
-            return missingIds;
+            return new DeleteProductsResult(missingIds, []);
+        }
+
+        List<Guid> idsInOrders = await dbContext.Orders
+            .SelectMany(order => order.Items)
+            .Where(item => ids.Contains(item.ProductId))
+            .Select(item => item.ProductId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (idsInOrders.Count > 0)
+        {
+            return new DeleteProductsResult([], idsInOrders);
         }
 
         dbContext.Products.RemoveRange(existingProducts);
@@ -119,7 +131,7 @@ internal sealed class ProductService(AppDbContext dbContext, IImageService image
 
         await imageService.DeleteAllAsync(ImageEntityType.Product, ids, cancellationToken);
 
-        return [];
+        return new DeleteProductsResult([], []);
     }
 
     private static IQueryable<Product> Sort(

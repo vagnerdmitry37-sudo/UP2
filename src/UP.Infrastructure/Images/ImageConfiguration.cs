@@ -9,6 +9,7 @@ internal sealed class ImageConfiguration : IEntityTypeConfiguration<Image>
 {
     private const int EntityTypeMaxLength = 50;
     private const int KeyMaxLength = 300;
+    private const int FileNameMaxLength = 255;
 
     public void Configure(EntityTypeBuilder<Image> builder)
     {
@@ -24,6 +25,10 @@ internal sealed class ImageConfiguration : IEntityTypeConfiguration<Image>
 
         builder.Property(image => image.Key)
             .HasMaxLength(KeyMaxLength)
+            .IsRequired();
+
+        builder.Property(image => image.FileName)
+            .HasMaxLength(FileNameMaxLength)
             .IsRequired();
 
         builder.HasIndex(image => image.Key).IsUnique();

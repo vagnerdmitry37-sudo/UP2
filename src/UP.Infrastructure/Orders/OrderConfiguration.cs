@@ -11,9 +11,6 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
 
     private const int NumberMaxLength = 20;
     private const int StatusMaxLength = 50;
-    private const int CustomerNameMaxLength = 200;
-    private const int CustomerEmailMaxLength = 256;
-    private const int CustomerPhoneMaxLength = 50;
     private const int PricePrecision = 18;
     private const int PriceScale = 2;
 
@@ -33,18 +30,6 @@ internal sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(order => order.Status)
             .HasConversion<string>()
             .HasMaxLength(StatusMaxLength)
-            .IsRequired();
-
-        builder.Property(order => order.CustomerName)
-            .HasMaxLength(CustomerNameMaxLength)
-            .IsRequired();
-
-        builder.Property(order => order.CustomerEmail)
-            .HasMaxLength(CustomerEmailMaxLength)
-            .IsRequired();
-
-        builder.Property(order => order.CustomerPhone)
-            .HasMaxLength(CustomerPhoneMaxLength)
             .IsRequired();
 
         builder.Property(order => order.TotalPrice)

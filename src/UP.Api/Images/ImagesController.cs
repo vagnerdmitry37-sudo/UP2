@@ -31,7 +31,7 @@ public sealed class ImagesController(IImageService imageService) : ControllerBas
         CreateImagesResult result = await imageService.CreateAsync(
             request.EntityType,
             request.EntityId,
-            [.. request.Files.Select(file => file.OpenReadStream())],
+            [.. request.Files.Select(file => new ImageFile(Path.GetFileName(file.FileName), file.OpenReadStream()))],
             cancellationToken);
 
         if (!result.EntityExists)

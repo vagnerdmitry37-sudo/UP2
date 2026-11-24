@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
+using UP.Domain.Customers;
 using UP.Domain.HistoryRecords;
 using UP.Domain.Images;
 using UP.Domain.Orders;
@@ -22,6 +23,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 
     public DbSet<HistoryRecord> HistoryRecords => Set<HistoryRecord>();
+
+    public DbSet<Customer> Customers => Set<Customer>();
 
     public DbSet<Order> Orders => Set<Order>();
 

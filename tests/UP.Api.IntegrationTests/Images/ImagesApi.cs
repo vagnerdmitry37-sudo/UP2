@@ -73,11 +73,18 @@ internal static class ImagesApi
         return SKBitmap.Decode(codec);
     }
 
-    public static async Task<HttpResponseMessage> CreateImagesAsync(
+    public static Task<HttpResponseMessage> CreateImagesAsync(
         this HttpClient client,
         string? accessToken,
         Guid entityId,
-        params byte[][] files)
+        params byte[][] files) =>
+        client.CreateNamedImagesAsync(accessToken, entityId, [.. files.Select(content => ("photo.jpg", content))]);
+
+    public static async Task<HttpResponseMessage> CreateNamedImagesAsync(
+        this HttpClient client,
+        string? accessToken,
+        Guid entityId,
+        params (string FileName, byte[] Content)[] files)
     {
         using var form = new MultipartFormDataContent
         {
@@ -85,11 +92,11 @@ internal static class ImagesApi
             { new StringContent(entityId.ToString()), "entityId" },
         };
 
-        foreach (byte[] content in files)
+        foreach ((string fileName, byte[] content) in files)
         {
             var file = new ByteArrayContent(content);
             file.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
-            form.Add(file, "files", "photo.jpg");
+            form.Add(file, "files", fileName);
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, ImagesRoute) { Content = form };

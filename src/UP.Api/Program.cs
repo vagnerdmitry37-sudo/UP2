@@ -2,7 +2,6 @@ using System.Reflection;
 using System.Text.Json.Serialization;
 
 using UP.Api.HistoryRecords;
-using UP.Api.RichText;
 using UP.Application.HistoryRecords;
 using UP.Infrastructure;
 
@@ -21,7 +20,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
     options.SerializerOptions.NumberHandling = JsonNumberHandling.Strict;
 });
-builder.Services.AddOpenApi(options => options.AddSchemaTransformer<RichTextSchemaTransformer>());
+builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
 

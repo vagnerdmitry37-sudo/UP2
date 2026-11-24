@@ -19,9 +19,9 @@ public sealed class DeleteOrdersTests(ApiFactory factory) : IntegrationTest(fact
     public async Task Selected_orders_are_deleted_with_their_items_and_others_are_kept()
     {
         Guid productId = await SeedProductAsync();
-        OrderResponse anna = await CreateOrderAsync(productId, "Anna Novak");
-        OrderResponse petr = await CreateOrderAsync(productId, "Petr Svoboda");
-        OrderResponse jana = await CreateOrderAsync(productId, "Jana Dvorak");
+        OrderResponse anna = await CreateOrderAsync(productId);
+        OrderResponse petr = await CreateOrderAsync(productId);
+        OrderResponse jana = await CreateOrderAsync(productId);
         string accessToken = await SignInAsync();
 
         HttpResponseMessage response = await Client.DeleteOrdersAsync(accessToken, anna.Id, jana.Id, jana.Id);
@@ -34,7 +34,7 @@ public sealed class DeleteOrdersTests(ApiFactory factory) : IntegrationTest(fact
     [Fact]
     public async Task Unknown_id_returns_404_naming_it_and_deletes_nothing()
     {
-        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync(), "Anna Novak");
+        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync());
         string accessToken = await SignInAsync();
         Guid unknownId = Guid.CreateVersion7();
 
@@ -48,7 +48,7 @@ public sealed class DeleteOrdersTests(ApiFactory factory) : IntegrationTest(fact
     [Fact]
     public async Task Orders_cannot_be_deleted_without_sign_in()
     {
-        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync(), "Anna Novak");
+        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync());
 
         HttpResponseMessage response = await Client.DeleteOrdersAsync(accessToken: null, anna.Id);
 
@@ -65,10 +65,12 @@ public sealed class DeleteOrdersTests(ApiFactory factory) : IntegrationTest(fact
     private async Task<string> SignInAsync() =>
         (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
 
-    private async Task<OrderResponse> CreateOrderAsync(Guid productId, string customerName)
+    private async Task<OrderResponse> CreateOrderAsync(Guid productId)
     {
-        HttpResponseMessage response = await Client.CreateOrderAsync(
-            OrdersApi.NewOrder(customerName, OrdersApi.NewItem(productId)));
+        string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
+        HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(
+            accessToken,
+            OrdersApi.NewItem(productId));
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }
@@ -81,7 +83,6 @@ public sealed class DeleteOrdersTests(ApiFactory factory) : IntegrationTest(fact
             Type = ProductType.GroupExcursion,
             Name = "Day trip to Bamberg",
             SeoDescription = "Seeded for an order test",
-            Attributes = """{"durationMinutes":360,"meetingPoint":"Hotel Pupp"}""",
             Price = 40m,
         };
         await QueryDatabaseAsync(db =>

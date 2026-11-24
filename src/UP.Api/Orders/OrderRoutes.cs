@@ -9,8 +9,4 @@ internal static class OrderRoutes
     public const string ByIds = "by-ids";
 
     public const string Items = "{id:guid}/items";
-
-    public const string ItemById = "{id:guid}/items/{itemId:guid}";
-
-    public const string Customer = "{id:guid}/customer";
 }

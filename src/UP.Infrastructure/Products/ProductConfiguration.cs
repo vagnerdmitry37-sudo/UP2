@@ -11,7 +11,6 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
     private const int NameMaxLength = 200;
     private const int SeoDescriptionMaxLength = 160;
     private const int ShortDescriptionMaxLength = 200;
-    private const int DescriptionMaxLength = 20000;
     private const int PricePrecision = 18;
     private const int PriceScale = 2;
 
@@ -39,16 +38,8 @@ internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasMaxLength(ShortDescriptionMaxLength)
             .IsRequired();
 
-        builder.Property(product => product.Description)
-            .HasMaxLength(DescriptionMaxLength)
-            .IsRequired();
-
         builder.Property(product => product.Price)
             .HasPrecision(PricePrecision, PriceScale);
-
-        builder.Property(product => product.Attributes)
-            .HasColumnType("jsonb")
-            .IsRequired();
 
         builder.HasIndex(product => product.Type);
     }

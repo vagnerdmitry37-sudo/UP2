@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace UP.Api.Orders;
 
 public sealed record UpdateOrderItemRequest(
+    Guid Id,
     Guid ProductId,
     DateTimeOffset StartsAt,
     [Range(1, 100)] int Passengers,

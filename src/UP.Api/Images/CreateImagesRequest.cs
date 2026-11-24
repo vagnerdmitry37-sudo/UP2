@@ -16,6 +16,7 @@ public sealed record CreateImagesRequest(
     public const int MaxFiles = 10;
     public const long MaxFileBytes = 10 * 1024 * 1024;
     public const long MaxRequestBytes = (MaxFiles * MaxFileBytes) + (1024 * 1024);
+    public const int MaxFileNameLength = 255;
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -25,6 +26,13 @@ public sealed record CreateImagesRequest(
             {
                 yield return new ValidationResult(
                     $"File '{file.FileName}' is larger than 10 MB.",
+                    [nameof(Files)]);
+            }
+
+            if (Path.GetFileName(file.FileName).Length > MaxFileNameLength)
+            {
+                yield return new ValidationResult(
+                    $"File name '{file.FileName}' is longer than {MaxFileNameLength} characters.",
                     [nameof(Files)]);
             }
         }

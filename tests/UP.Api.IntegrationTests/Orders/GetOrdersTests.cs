@@ -24,19 +24,22 @@ public sealed class GetOrdersTests(ApiFactory factory) : IntegrationTest(factory
     public async Task Orders_are_paged_newest_first_with_their_items_and_total_of_all_orders()
     {
         Guid productId = await SeedProductAsync();
-        foreach (string customer in new[] { "First Customer", "Second Customer", "Third Customer" })
-        {
-            HttpResponseMessage created = await Client.CreateOrderAsync(
-                OrdersApi.NewOrder(customer, OrdersApi.NewItem(productId)));
-            created.EnsureSuccessStatusCode();
-        }
         string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
+        List<Guid> createdIds = [];
+        for (int orderNumber = 0; orderNumber < 3; orderNumber++)
+        {
+            HttpResponseMessage created = await Client.CreateOrderForNewCustomerAsync(
+                accessToken,
+                OrdersApi.NewItem(productId));
+            created.EnsureSuccessStatusCode();
+            createdIds.Add((await created.ReadOrderAsync()).Id);
+        }
 
         OrdersPageResponse firstPage = await ReadPageAsync(accessToken, "first=0&rows=2");
         OrdersPageResponse secondPage = await ReadPageAsync(accessToken, "first=2&rows=2");
 
-        firstPage.Items.Select(order => order.CustomerName).ShouldBe(["Third Customer", "Second Customer"]);
-        secondPage.Items.Select(order => order.CustomerName).ShouldBe(["First Customer"]);
+        firstPage.Items.Select(order => order.Id).ShouldBe([createdIds[2], createdIds[1]]);
+        secondPage.Items.Select(order => order.Id).ShouldBe([createdIds[0]]);
         firstPage.TotalRecords.ShouldBe(3);
         firstPage.Items[0].Items.Single().ProductId.ShouldBe(productId);
     }
@@ -56,7 +59,6 @@ public sealed class GetOrdersTests(ApiFactory factory) : IntegrationTest(factory
             Type = ProductType.GroupExcursion,
             Name = "Day trip to Bamberg",
             SeoDescription = "Seeded for an order test",
-            Attributes = """{"durationMinutes":360,"meetingPoint":"Hotel Pupp"}""",
             Price = 40m,
         };
         await QueryDatabaseAsync(db =>

@@ -43,7 +43,6 @@ public sealed class GetProductsTests(ApiFactory factory) : IntegrationTest(facto
 
         page.Items.Select(product => product.Name).ShouldBe(["Old Town Walk", "Airport to hotel"]);
         page.Items[1].Type.ShouldBe(ProductType.IndividualTransfer);
-        page.Items[0].Attributes.GetProperty("durationMinutes").GetInt32().ShouldBe(180);
     }
 
     [Fact]

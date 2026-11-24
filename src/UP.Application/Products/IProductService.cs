@@ -12,5 +12,5 @@ public interface IProductService
 
     Task<UpdateProductsResult> UpdateAsync(IReadOnlyList<Product> products, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Guid>> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
+    Task<DeleteProductsResult> DeleteAsync(IReadOnlyList<Guid> ids, CancellationToken cancellationToken);
 }

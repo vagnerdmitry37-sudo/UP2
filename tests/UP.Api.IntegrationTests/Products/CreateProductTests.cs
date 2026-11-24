@@ -29,8 +29,6 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
         product.Name.ShouldBe("Old Town Walk");
         product.SeoDescription.ShouldBe("Three hours through the historic centre");
         product.Price.ShouldBe(25.50m);
-        product.Attributes.GetProperty("durationMinutes").GetInt32().ShouldBe(180);
-        product.Attributes.GetProperty("meetingPoint").GetString().ShouldBe("Main square");
     }
 
     [Fact]
@@ -70,7 +68,7 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
 
         HttpResponseMessage response = await Client.CreateProductsAsync(
             accessToken,
-            ProductsApi.NewProduct(type: "IndividualTransfer", name: "Airport to hotel", attributes: ProductsApi.TransferAttributes()));
+            ProductsApi.NewProduct(type: "IndividualTransfer", name: "Airport to hotel"));
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
         (await response.ReadProductsAsync()).ShouldHaveSingleItem().Type.ShouldBe(ProductType.IndividualTransfer);
@@ -137,7 +135,6 @@ public sealed class CreateProductTests(ApiFactory factory) : IntegrationTest(fac
                 name = "Old Town Walk",
                 seoDescription = "Three hours through the historic centre",
                 price = "25.50",
-                attributes = new { durationMinutes = 180 },
             });
 
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

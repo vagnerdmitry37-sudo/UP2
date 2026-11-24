@@ -6,24 +6,18 @@ public interface IOrderService
 {
     Task<OrderResult> CreateAsync(Order order, CancellationToken cancellationToken);
 
-    Task<OrderResult> CreateItemAsync(Guid orderId, OrderItem item, CancellationToken cancellationToken);
+    Task<UpdateOrdersResult> UpdateAsync(IReadOnlyList<Order> orders, CancellationToken cancellationToken);
 
-    Task<OrderResult> UpdateItemAsync(
+    Task<OrderItemResult> CreateItemAsync(Guid orderId, OrderItem item, CancellationToken cancellationToken);
+
+    Task<OrderResult> UpdateItemsAsync(
         Guid orderId,
-        Guid itemId,
-        OrderItem item,
+        IReadOnlyList<OrderItem> items,
         CancellationToken cancellationToken);
 
     Task<OrderResult> DeleteItemsAsync(
         Guid orderId,
         IReadOnlyList<Guid> itemIds,
-        CancellationToken cancellationToken);
-
-    Task<Order?> UpdateCustomerAsync(
-        Guid id,
-        string customerName,
-        string customerEmail,
-        string customerPhone,
         CancellationToken cancellationToken);
 
     Task<Order?> GetAsync(Guid id, CancellationToken cancellationToken);

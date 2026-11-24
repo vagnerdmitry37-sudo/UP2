@@ -16,22 +16,22 @@ public sealed class GetOrdersByIdsTests(ApiFactory factory) : IntegrationTest(fa
     public async Task Orders_are_returned_in_requested_order_with_their_items()
     {
         Guid productId = await SeedProductAsync();
-        OrderResponse anna = await CreateOrderAsync(productId, "Anna Novak");
-        OrderResponse petr = await CreateOrderAsync(productId, "Petr Svoboda");
+        OrderResponse anna = await CreateOrderAsync(productId);
+        OrderResponse petr = await CreateOrderAsync(productId);
         string accessToken = await SignInAsync();
 
         HttpResponseMessage response = await Client.GetOrdersByIdsAsync(accessToken, petr.Id, anna.Id);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
         IReadOnlyList<OrderResponse> orders = await response.ReadOrdersAsync();
-        orders.Select(order => order.CustomerName).ShouldBe(["Petr Svoboda", "Anna Novak"]);
+        orders.Select(order => order.Id).ShouldBe([petr.Id, anna.Id]);
         orders.ShouldAllBe(order => order.Items.Single().ProductId == productId);
     }
 
     [Fact]
     public async Task Same_id_twice_returns_the_order_once()
     {
-        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync(), "Anna Novak");
+        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync());
         string accessToken = await SignInAsync();
 
         HttpResponseMessage response = await Client.GetOrdersByIdsAsync(accessToken, anna.Id, anna.Id);
@@ -43,7 +43,7 @@ public sealed class GetOrdersByIdsTests(ApiFactory factory) : IntegrationTest(fa
     [Fact]
     public async Task Unknown_id_returns_404_naming_it()
     {
-        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync(), "Anna Novak");
+        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync());
         string accessToken = await SignInAsync();
         Guid unknownId = Guid.CreateVersion7();
 
@@ -70,7 +70,7 @@ public sealed class GetOrdersByIdsTests(ApiFactory factory) : IntegrationTest(fa
     [Fact]
     public async Task Orders_cannot_be_read_without_sign_in()
     {
-        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync(), "Anna Novak");
+        OrderResponse anna = await CreateOrderAsync(await SeedProductAsync());
 
         HttpResponseMessage response = await Client.GetOrdersByIdsAsync(accessToken: null, anna.Id);
 
@@ -80,10 +80,12 @@ public sealed class GetOrdersByIdsTests(ApiFactory factory) : IntegrationTest(fa
     private async Task<string> SignInAsync() =>
         (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
 
-    private async Task<OrderResponse> CreateOrderAsync(Guid productId, string customerName)
+    private async Task<OrderResponse> CreateOrderAsync(Guid productId)
     {
-        HttpResponseMessage response = await Client.CreateOrderAsync(
-            OrdersApi.NewOrder(customerName, OrdersApi.NewItem(productId)));
+        string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
+        HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(
+            accessToken,
+            OrdersApi.NewItem(productId));
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }
@@ -96,7 +98,6 @@ public sealed class GetOrdersByIdsTests(ApiFactory factory) : IntegrationTest(fa
             Type = ProductType.GroupExcursion,
             Name = "Day trip to Bamberg",
             SeoDescription = "Seeded for an order test",
-            Attributes = """{"durationMinutes":360,"meetingPoint":"Hotel Pupp"}""",
             Price = 40m,
         };
         await QueryDatabaseAsync(db =>

@@ -90,7 +90,8 @@ public sealed class DeleteOrderItemsTests(ApiFactory factory) : IntegrationTest(
 
     private async Task<OrderResponse> CreateOrderAsync(params object[] items)
     {
-        HttpResponseMessage response = await Client.CreateOrderAsync(OrdersApi.NewOrder("Anna Novak", items));
+        string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
+        HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(accessToken, items);
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }
@@ -103,7 +104,6 @@ public sealed class DeleteOrderItemsTests(ApiFactory factory) : IntegrationTest(
             Type = type,
             Name = $"{type} product",
             SeoDescription = "Seeded for an order test",
-            Attributes = "{}",
             Price = price,
         };
         await QueryDatabaseAsync(db =>

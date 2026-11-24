@@ -29,14 +29,16 @@ public sealed class CreateOrderItemTests(ApiFactory factory) : IntegrationTest(f
             accessToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
-        OrderResponse order = await response.ReadOrderAsync();
-        order.Items.Select(item => item.TotalPrice).ShouldBe([80m, 100m], ignoreOrder: true);
-        order.TotalPrice.ShouldBe(180m);
+        OrderItemResponse item = await response.ReadOrderItemAsync();
+        item.ProductId.ShouldBe(transfer.Id);
+        item.UnitPrice.ShouldBe(100m);
+        item.TotalPrice.ShouldBe(100m);
         Order stored = await QueryDatabaseAsync(db => db.Orders
             .AsNoTracking()
             .Include(storedOrder => storedOrder.Items)
             .SingleAsync(storedOrder => storedOrder.Id == created.Id, CancellationToken));
         stored.TotalPrice.ShouldBe(180m);
+        stored.Items.Select(storedItem => storedItem.Id).ShouldContain(item.Id);
         stored.Items.Count.ShouldBe(2);
     }
 
@@ -71,8 +73,10 @@ public sealed class CreateOrderItemTests(ApiFactory factory) : IntegrationTest(f
 
     private async Task<OrderResponse> CreateOrderAsync(Guid productId)
     {
-        HttpResponseMessage response = await Client.CreateOrderAsync(
-            OrdersApi.NewOrder("Anna Novak", OrdersApi.NewItem(productId)));
+        string accessToken = (await Client.RegisterAndLoginAsync(Email, Password)).AccessToken;
+        HttpResponseMessage response = await Client.CreateOrderForNewCustomerAsync(
+            accessToken,
+            OrdersApi.NewItem(productId));
         response.EnsureSuccessStatusCode();
         return await response.ReadOrderAsync();
     }
@@ -85,7 +89,6 @@ public sealed class CreateOrderItemTests(ApiFactory factory) : IntegrationTest(f
             Type = type,
             Name = $"{type} product",
             SeoDescription = "Seeded for an order test",
-            Attributes = "{}",
             Price = price,
         };
         await QueryDatabaseAsync(db =>
