@@ -121,6 +121,35 @@
         }
       }
     },
+    "/api/reference-data": {
+      "get": {
+        "tags": [
+          "ReferenceData"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceDataResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceDataResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferenceDataResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/products": {
       "post": {
         "tags": [
@@ -3377,6 +3406,21 @@
           "Completed"
         ]
       },
+      "OrderStatusOption": {
+        "required": [
+          "value",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/OrderStatus"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -3520,6 +3564,42 @@
           "IndividualTransfer",
           "GroupTransfer"
         ]
+      },
+      "ProductTypeOption": {
+        "required": [
+          "value",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/ProductType"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      },
+      "ReferenceDataResponse": {
+        "required": [
+          "productTypes",
+          "orderStatuses"
+        ],
+        "type": "object",
+        "properties": {
+          "productTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductTypeOption"
+            }
+          },
+          "orderStatuses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrderStatusOption"
+            }
+          }
+        }
       },
       "RegisterRequest": {
         "required": [
@@ -3741,6 +3821,9 @@
   "tags": [
     {
       "name": "UserProfile"
+    },
+    {
+      "name": "ReferenceData"
     },
     {
       "name": "Products"
